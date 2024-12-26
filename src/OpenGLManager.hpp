@@ -14,9 +14,11 @@
 #include "imgui/imgui_impl_sdl2.h"
 #include "imgui/imgui_impl_opengl3.h"
 
+#include "FilepathManager.hpp"
+
 class OpenGLManager {
 public:
-    OpenGLManager();
+    OpenGLManager(FilepathManager* inFilepathManager);
     GLuint myShaderProgram, myShaderB;
     GLuint VBO, VAO, shaderProgram;
     GLuint cubeVAO, cubeVBO;
@@ -46,4 +48,5 @@ private:
     ShapesManager* myShapesManager;
     ShaderManager* myShaderManager;
     int selectedShaderIndex; // Index of the selected shader in the dropdown
+    FilepathManager* myFilepathManager;
 };

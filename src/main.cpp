@@ -44,9 +44,10 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // Initialize GLEW
-    OpenGLManager myOpenGLManager;
-    myOpenGLManager.InitializeOpenGL();
+    FilepathManager* myFilepathManager = new FilepathManager();
+
+    OpenGLManager myOpenGLManager(myFilepathManager);
+    myOpenGLManager.InitializeOpenGL(); // Initialize GLEW
 
     // Create shapes
     glm::vec3 red(1.0f, 0.0f, 0.0f);
@@ -68,7 +69,6 @@ int main(int argc, char* argv[]) {
         shape->initialize();
     }
 
-    FilepathManager* myFilepathManager = new FilepathManager();
 
     ModelManager myModelManager(myFilepathManager);
 
@@ -89,7 +89,7 @@ int main(int argc, char* argv[]) {
     ImGui_ImplOpenGL3_Init("#version 330 core"); // Replace `#version 330 core` with your GLSL version.
     ////
 
-    size_t hash_key_evergreen_tree = std::hash<std::string>{}("evergreen_tree");
+    size_t hash_key_evergreen_tree = std::hash<std::string>{}("evergreen_tree.gltf");
     //size_t evergreen_tree_textured = std::hash<std::string>{}("evergreen_tree_textured");
     //size_t barramundi = std::hash<std::string>{}("barramundi");
 

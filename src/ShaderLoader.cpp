@@ -16,7 +16,7 @@ ShaderData::ShaderData(std::string inName, std::string inVertexSource, std::stri
 }
 
 ShaderLoader::ShaderLoader() {
-    
+    std::cout << "ShaderLoader constructor called!" << std::endl;
 }
 
 size_t ShaderLoader::loadShaderData(const std::string& filePath) {

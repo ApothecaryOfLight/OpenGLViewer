@@ -15,8 +15,11 @@
 #include "imgui/imgui_impl_sdl2.h"
 #include "imgui/imgui_impl_opengl3.h"
 
-OpenGLManager::OpenGLManager() {
+#include "FilepathManager.hpp"
+
+OpenGLManager::OpenGLManager(FilepathManager* inFilepathManager) {
     selectedShaderIndex = 0;
+    myFilepathManager = inFilepathManager;
 }
 
 void OpenGLManager::InitializeOpenGL() {
@@ -27,7 +30,7 @@ void OpenGLManager::InitializeOpenGL() {
     }
 
     myShapesManager = new ShapesManager;
-    myShaderManager = new ShaderManager;
+    myShaderManager = new ShaderManager(myFilepathManager);
 
     isCelShading = false;
     myShaderManager->loadShadersLight();

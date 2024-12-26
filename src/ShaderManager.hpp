@@ -11,9 +11,11 @@
 
 #include "ShaderLoader.hpp"
 
+#include "FilepathManager.hpp"
+
 class ShaderManager {
 public:
-	ShaderManager();
+	ShaderManager(FilepathManager* inFilepathManager);
 	GLuint loadShader();
 	GLuint loadShader(const GLchar* inVertexShaderSource, const GLchar* inFragmentShaderSource);
 	void loadShaders();
@@ -22,10 +24,9 @@ public:
 	void loadShaderByFile(std::string inFileLoc);
 	GLuint getShader(size_t inShaderHashKey);
 
-	size_t initializeShader(std::string inShaderFile);
 	GLuint compileShader(size_t inShaderHashKeyID);
 
-	GLuint loadMyShader();
+	void loadMyShader();
 	// Shader sources
 	const GLchar* vertexSource;
 	const GLchar* fragmentSource;
@@ -35,4 +36,5 @@ public:
 	std::vector<std::pair<std::string,size_t>> getShaderList();
 private:
 	std::unordered_map<size_t,GLuint> myShaderPrograms;
+	FilepathManager* myFilepathManager;
 };

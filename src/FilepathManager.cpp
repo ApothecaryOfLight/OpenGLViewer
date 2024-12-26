@@ -17,7 +17,7 @@ FilepathManager::FilepathManager() {
         std::cout << "Working directory: " << myFilepath << std::endl;
         std::cout << "Scenes Direcotry: " << mySceneDir << std::endl;
         std::cout << "Models Direcotry: " << myModelDir << std::endl;
-        std::cout << "Shaders Direcotry: " << mySceneDir << std::endl;
+        std::cout << "Shaders Direcotry: " << myShaderDir << std::endl;
     } catch (const std::filesystem::filesystem_error& e) {
         // Handle any filesystem-related errors
         std::cerr << "Error when establishing working directory: " << e.what() << std::endl;

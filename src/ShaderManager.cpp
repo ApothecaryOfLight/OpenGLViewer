@@ -7,16 +7,24 @@
 
 #include "ShaderManager.hpp"
 
+#include "FilepathManager.hpp"
+
+#include <string>
+
 
 #include "ShaderLoader.hpp"
 
 #include <iostream>
 
-ShaderManager::ShaderManager() {
+ShaderManager::ShaderManager(FilepathManager* inFilepathManager) {
+    std::cout << "ShaderManager constructor called!" << std::endl;
     myShaderLoader = new ShaderLoader();
-    loadShaderByFile("../../bin/data/shaders/simple_light.shaderxml");
-    loadShaderByFile("../../bin/data/shaders/plain_materials.shaderxml");
-    loadShaderByFile("../../bin/data/shaders/cel.shaderxml");
+    myFilepathManager = inFilepathManager;
+
+    std::string myShaderDirectory(myFilepathManager->myShaderDir);
+    loadShaderByFile(myShaderDirectory + "simple_light.shaderxml");
+    loadShaderByFile(myShaderDirectory + "plain_materials.shaderxml");
+    loadShaderByFile(myShaderDirectory + "cel.shaderxml");
 }
 
 void ShaderManager::loadShaderByFile(std::string inFileLoc) {
@@ -138,7 +146,7 @@ GLuint ShaderManager::loadShader(const GLchar* inVertexShaderSource, const GLcha
     return shaderProgram;
 }
 
-GLuint ShaderManager::loadMyShader() {
+void ShaderManager::loadMyShader() {
     loadShader(
         R"glsl(
             #version 150 core
@@ -313,10 +321,6 @@ void main() {
 }
 
 )glsl";
-}
-
-size_t ShaderManager::initializeShader(std::string inShaderFile) {
-    size_t myShaderHashKey = myShaderLoader->loadShaderData(inShaderFile);
 }
 
 GLuint ShaderManager::compileShader(size_t inShaderHashKeyID) {

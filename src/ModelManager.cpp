@@ -31,44 +31,12 @@ ModelManager::ModelManager(FilepathManager* inFilepathManager) {
     std::string myModelsFilePath( myFilepathManager->myModelDir );
 
     loadAndBindModel("monkey_head.gltf",myModel, &vaoAndEbos);
-
     loadAndBindModel("tile.gltf",myModelB, &vaoAndEbosB);
-    
     loadAndBindModel("evergreen_tree.gltf",myModelLoaded,&vaoAndEbosLoaded);
 
     doLoadBindHashModel("evergreen_tree.gltf");
     doLoadBindHashModel("evergreen_tree_textured.gltf");
     doLoadBindHashModel("BarramundiFish.gltf");
-
-    /*tinygltf::Model myTempModel;
-    if (!loadModel(std::string(myModelsFilePath + "evergreen_tree.gltf").c_str(), myTempModel)) {
-        std::cerr << "Failed to load glTF model" << std::endl;
-    } else {
-        auto myLocalVaoAndEbos = bindModel(myTempModel);
-        size_t myLocalHash = std::hash<std::string>{}("evergreen_tree");
-        myModels[myLocalHash] = std::move(myTempModel);
-        myVaosAndEbos[myLocalHash] = std::move(myLocalVaoAndEbos);
-    }
-    
-    tinygltf::Model myTempModelB;
-    if (!loadModel(std::string(myModelsFilePath + "evergreen_tree_textured.gltf").c_str(), myTempModelB)) {
-        std::cerr << "Failed to load glTF model" << std::endl;
-    } else {
-        auto myLocalVaoAndEbos = bindModel(myTempModelB);
-        size_t myLocalHash = std::hash<std::string>{}("evergreen_tree_textured");
-        myModels[myLocalHash] = std::move(myTempModelB);
-        myVaosAndEbos[myLocalHash] = std::move(myLocalVaoAndEbos);
-    }
-    
-    tinygltf::Model myTempModelC;
-    if (!loadModel(std::string(myModelsFilePath + "BarramundiFish.gltf").c_str(), myTempModelC)) {
-        std::cerr << "Failed to load glTF model" << std::endl;
-    } else {
-        auto myLocalVaoAndEbos = bindModel(myTempModelC);
-        size_t myLocalHash = std::hash<std::string>{}("barramundi");
-        myModels[myLocalHash] = std::move(myTempModelC);
-        myVaosAndEbos[myLocalHash] = std::move(myLocalVaoAndEbos);
-    }*/
 }
 
 void ModelManager::loadAndBindModel(const std::string& inFilename, tinygltf::Model& inModel, std::pair<GLuint, std::map<int, GLuint>>* inVaosAndEbos) {
@@ -87,7 +55,7 @@ void ModelManager::doLoadBindHashModel(const std::string& inFilename) {
         std::cerr << "Failed to load glTF model" << std::endl;
     } else {
         auto myLocalVaoAndEbos = bindModel(myTempModel);
-        size_t myLocalHash = std::hash<std::string>{}("evergreen_tree");
+        size_t myLocalHash = std::hash<std::string>{}(inFilename);
         myModels[myLocalHash] = std::move(myTempModel);
         myVaosAndEbos[myLocalHash] = std::move(myLocalVaoAndEbos);
     } 
