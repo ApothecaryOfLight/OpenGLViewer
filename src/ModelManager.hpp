@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "FilepathManager.hpp"
+#include "SceneLoader.hpp"
 
 class ModelManager {
 public:
@@ -28,6 +29,7 @@ public:
 	void drawModel(GLuint shaderProgram, float rotation);
 	void drawModel(GLuint shaderProgram, tinygltf::Model inModel, glm::mat4 transform);
 	void drawModelFromHash(GLuint shaderProgram, size_t inHashKey);
+	void drawModelFromRenderObject(GLuint shaderProgram, RenderObject* inRenderObject);
 
 	void loadModelButton();
 	void drawModelLoaded(GLuint shaderProgram);

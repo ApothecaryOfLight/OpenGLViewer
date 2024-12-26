@@ -16,13 +16,19 @@
 #include "imgui/imgui_impl_opengl3.h"
 
 #include "FilepathManager.hpp"
+#include "SceneManager.hpp"
+#include "SceneLoader.hpp"
 
 OpenGLManager::OpenGLManager(FilepathManager* inFilepathManager) {
     selectedShaderIndex = 0;
     myFilepathManager = inFilepathManager;
+    InitializeOpenGL();
+    myModelManager = new ModelManager(inFilepathManager);
+    mySceneManager = new SceneManager(inFilepathManager);
 }
 
 void OpenGLManager::InitializeOpenGL() {
+    std::cout << "Initializing OpenGL!" << std::endl;
     glewExperimental = GL_TRUE;
     if (glewInit() != GLEW_OK) {
         std::cerr << "Failed to initialize GLEW" << std::endl;
@@ -41,6 +47,7 @@ void OpenGLManager::InitializeOpenGL() {
     glEnable(GL_DEPTH_TEST);
 
     setCamera();
+    std::cout << "OpenGL initialized!" << std::endl;
 }
 
 
@@ -207,4 +214,22 @@ void OpenGLManager::renderShaderMenu() {
 
     // End the menu window
     ImGui::End();
+}
+
+void OpenGLManager::doDrawScene(size_t inSceneHashKey) {
+    Scene* myScene = mySceneManager->getScene(inSceneHashKey);
+    for( auto& myRenderObject : myScene->myRenderObjects ) {
+        myModelManager->drawModelFromRenderObject(shaderProgram, &myRenderObject);
+    }
+}
+
+void OpenGLManager::doPrototypeDrawCall(float inAngle) {
+    size_t hash_key_evergreen_tree = std::hash<std::string>{}("evergreen_tree.gltf");
+    myModelManager->drawModel(shaderProgram, inAngle*10);
+    myModelManager->drawModelLoaded(shaderProgram);
+    myModelManager->drawModelFromHash(shaderProgram, hash_key_evergreen_tree);
+}
+
+void OpenGLManager::loadModelButton() {
+    myModelManager->loadModelButton();
 }

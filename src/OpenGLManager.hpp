@@ -16,6 +16,10 @@
 
 #include "FilepathManager.hpp"
 
+#include "SceneManager.hpp"
+
+#include "ModelManager.hpp"
+
 class OpenGLManager {
 public:
     OpenGLManager(FilepathManager* inFilepathManager);
@@ -34,6 +38,11 @@ public:
 
     void renderShaderMenu();
 
+    void doDrawScene(size_t inSceneHashKey);
+
+    void doPrototypeDrawCall(float inAngle);
+    void loadModelButton();
+
     glm::mat4 view, proj;
 
     glm::vec3 cameraPos, cameraFront, cameraUp;
@@ -47,6 +56,8 @@ public:
 private:
     ShapesManager* myShapesManager;
     ShaderManager* myShaderManager;
+    SceneManager* mySceneManager;
     int selectedShaderIndex; // Index of the selected shader in the dropdown
     FilepathManager* myFilepathManager;
+    ModelManager* myModelManager;
 };

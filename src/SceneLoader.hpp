@@ -15,6 +15,10 @@ public:
     RenderObject(glm::vec3 inTranslation, float inRotationIntensity, glm::vec3 inRotation, glm::vec3 inScale, size_t inModelHashKey);
     size_t ModelHashKey;
     glm::mat4 myTransformation;
+    float myRotationIntensity;
+    glm::vec3 myTranslation;
+    glm::vec3 myRotation;
+    glm::vec3 myScale;
 };
 
 class Scene {

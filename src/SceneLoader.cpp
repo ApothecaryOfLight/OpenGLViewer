@@ -11,13 +11,22 @@
 #include <functional> // For std::hash
 
 // Assuming RenderObject and Scene classes are already defined
-RenderObject::RenderObject() : ModelHashKey(0), myTransformation(1.0f) {}
+RenderObject::RenderObject() : ModelHashKey(0), myTransformation(glm::mat4(1.0f)) {
+    std::cout << "Error! Broken object!" << std::endl;
+}
 
 RenderObject::RenderObject(glm::vec3 inTranslation, float inRotationIntensity, glm::vec3 inRotation, glm::vec3 inScale, size_t inModelHashKey) 
-    : ModelHashKey(inModelHashKey) {
+    : ModelHashKey(inModelHashKey), myTransformation(glm::mat4(1.0f)) {
+    std::cout << "Setting myTransformation." << std::endl;
+    std::cout << "X: " << inTranslation.x << std::endl;
     myTransformation = glm::translate(glm::mat4(1.0f), inTranslation);
     myTransformation = glm::rotate(myTransformation, glm::radians(inRotationIntensity), inRotation);
     myTransformation = glm::scale(myTransformation, inScale);
+    std::cout << "inscale: " << inRotationIntensity << std::endl;
+    myRotationIntensity = inRotationIntensity;
+    myTranslation = inTranslation;
+    myRotation = inRotation;
+    myScale = inScale;
 }
 
 Scene::Scene() {
@@ -34,6 +43,8 @@ SceneLoader::SceneLoader() {
 }
 
 Scene* SceneLoader::doLoadScene(std::string inFileLoc) {
+    std::cout << "Loading scene " << inFileLoc << std::endl;
+
     Scene* sceneToRet = new Scene();
     tinyxml2::XMLDocument doc;
     if (doc.LoadFile(inFileLoc.c_str()) != tinyxml2::XML_SUCCESS) {
@@ -74,6 +85,7 @@ Scene* SceneLoader::doLoadScene(std::string inFileLoc) {
         glm::vec3 position;
         std::stringstream positionStream(positionText);
         positionStream >> position.x >> position.y >> position.z;
+        std::cout << "original translation " << position.x << "," << position.y << "," << position.z << std::endl;
 
         // Parse rotation
         glm::vec3 rotationAxis;
@@ -89,5 +101,6 @@ Scene* SceneLoader::doLoadScene(std::string inFileLoc) {
         // Add RenderObject to the Scene
         sceneToRet->addRenderObject(position, rotationIntensity, rotationAxis, scale, modelHashKey);
     }
+    std::cout << "Loaded scene " << inFileLoc << std::endl;
     return sceneToRet;
 }

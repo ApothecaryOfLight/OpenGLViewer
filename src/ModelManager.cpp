@@ -34,28 +34,33 @@ ModelManager::ModelManager(FilepathManager* inFilepathManager) {
     loadAndBindModel("tile.gltf",myModelB, &vaoAndEbosB);
     loadAndBindModel("evergreen_tree.gltf",myModelLoaded,&vaoAndEbosLoaded);
 
+    doLoadBindHashModel("monkey_head.gltf");
+    doLoadBindHashModel("tile.gltf");
     doLoadBindHashModel("evergreen_tree.gltf");
     doLoadBindHashModel("evergreen_tree_textured.gltf");
     doLoadBindHashModel("BarramundiFish.gltf");
 }
 
 void ModelManager::loadAndBindModel(const std::string& inFilename, tinygltf::Model& inModel, std::pair<GLuint, std::map<int, GLuint>>* inVaosAndEbos) {
-    std::string myModelsFilePath( myFilepathManager->myModelDir );
-    if (!loadModel(std::string(myModelsFilePath + inFilename).c_str(), inModel)) {
+    std::string myModelsFilePath( myFilepathManager->myModelDir + inFilename );
+    std::cout << "Loading: " << myModelsFilePath << std::endl;
+    if (!loadModel(myModelsFilePath.c_str(), inModel)) {
         std::cerr << "Failed to load glTF model " << inFilename << std::endl;
     }
-    auto tempVaosAndEbos = bindModel(inModel);
+    std::pair<GLuint, std::map<int, GLuint>> tempVaosAndEbos = bindModel(inModel);
     *inVaosAndEbos = tempVaosAndEbos;
 }
 
 void ModelManager::doLoadBindHashModel(const std::string& inFilename) {
     tinygltf::Model myTempModel;
-    std::string myModelsFilePath( myFilepathManager->myModelDir );
-    if (!loadModel(std::string(myModelsFilePath + inFilename).c_str(), myTempModel)) {
+    std::string myModelFilePath( myFilepathManager->myModelDir + inFilename );
+    std::cout << "MyModelFilePath " << myModelFilePath << std::endl;
+    if (!loadModel(myModelFilePath.c_str(), myTempModel)) {
         std::cerr << "Failed to load glTF model" << std::endl;
     } else {
-        auto myLocalVaoAndEbos = bindModel(myTempModel);
-        size_t myLocalHash = std::hash<std::string>{}(inFilename);
+        std::pair<GLuint, std::map<int, GLuint>> myLocalVaoAndEbos = bindModel(myTempModel);
+        size_t myLocalHash = std::hash<std::string>{}(std::string(inFilename));
+        std::cout << "Adding model " << myLocalHash << std::endl;
         myModels[myLocalHash] = std::move(myTempModel);
         myVaosAndEbos[myLocalHash] = std::move(myLocalVaoAndEbos);
     } 
@@ -257,8 +262,7 @@ void ModelManager::bindMesh(std::map<int, GLuint>& vbos, tinygltf::Model& model,
         }
     }
 }
-void ModelManager::bindModelNodes(std::map<int, GLuint>& vbos, tinygltf::Model& model,
-    tinygltf::Node& node) {
+void ModelManager::bindModelNodes(std::map<int, GLuint>& vbos, tinygltf::Model& model, tinygltf::Node& node) {
     if ((node.mesh >= 0) && (node.mesh < static_cast<int>(model.meshes.size()))) {
         bindMesh(vbos, model, model.meshes[node.mesh]);
     }
@@ -351,18 +355,17 @@ void ModelManager::drawModelFromHash(GLuint shaderProgram, size_t inHash) {
 
         // Pass the transformation matrix to the shader
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(transformation));
-
         
-    // Example uniform settings
-    glm::vec3 lightPos = glm::vec3(1.2f, 1.0f, 2.0f);
-    glm::vec3 viewPos = glm::vec3(0.0f, 0.0f, 3.0f);
-    glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
-    glm::vec3 objectColor = glm::vec3(1.0f, 0.5f, 0.31f);
+        // Example uniform settings
+        glm::vec3 lightPos = glm::vec3(1.2f, 1.0f, 2.0f);
+        glm::vec3 viewPos = glm::vec3(0.0f, 0.0f, 3.0f);
+        glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
+        glm::vec3 objectColor = glm::vec3(1.0f, 0.5f, 0.31f);
 
-    glUniform3f(glGetUniformLocation(shaderProgram, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
-    glUniform3f(glGetUniformLocation(shaderProgram, "viewPos"), viewPos.x, viewPos.y, viewPos.z);
-    glUniform3f(glGetUniformLocation(shaderProgram, "lightColor"), lightColor.x, lightColor.y, lightColor.z);
-    glUniform3f(glGetUniformLocation(shaderProgram, "objectColor"), objectColor.x, objectColor.y, objectColor.z);
+        glUniform3f(glGetUniformLocation(shaderProgram, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
+        glUniform3f(glGetUniformLocation(shaderProgram, "viewPos"), viewPos.x, viewPos.y, viewPos.z);
+        glUniform3f(glGetUniformLocation(shaderProgram, "lightColor"), lightColor.x, lightColor.y, lightColor.z);
+        glUniform3f(glGetUniformLocation(shaderProgram, "objectColor"), objectColor.x, objectColor.y, objectColor.z);
 
         // Bind the VAO
         glBindVertexArray(myLocalVaoAndEbos.first);
@@ -371,6 +374,53 @@ void ModelManager::drawModelFromHash(GLuint shaderProgram, size_t inHash) {
         const tinygltf::Scene& scene = myLocalModel.scenes[myLocalModel.defaultScene];
         for (size_t i = 0; i < scene.nodes.size(); ++i) {
             drawModelNodesByHash(inHash, i, scene);
+        }
+
+        // Unbind the VAO
+        glBindVertexArray(0);
+    } else {
+        std::cerr << "Error: Model or VAO/EBO data not found for hash: " << inHash << std::endl;
+    }
+}
+
+void ModelManager::drawModelFromRenderObject(GLuint shaderProgram, RenderObject* inRenderObject) {
+    // Check if the model and VAO/EBO data exist in the maps
+    size_t myRenderObjectHash = inRenderObject->ModelHashKey;
+    auto modelIt = myModels.find(myRenderObjectHash);
+    auto vaoIt = myVaosAndEbos.find(myRenderObjectHash);
+    if (modelIt != myModels.end() && vaoIt != myVaosAndEbos.end()) {
+        tinygltf::Model& myLocalModel = modelIt->second;
+        const auto& myLocalVaoAndEbos = vaoIt->second;
+
+        // Create the transformation matrix
+        glm::mat4 transformation = glm::mat4(1.0f); // Identity matrix
+        transformation = glm::translate(transformation, inRenderObject->myTranslation); // Translation
+        transformation = glm::rotate(transformation, inRenderObject->myRotationIntensity, inRenderObject->myRotation); // Rotation
+        transformation = glm::scale(transformation, inRenderObject->myScale); // Scaling
+
+        // Pass the transformation matrix to the shader
+        //glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(inRenderObject->myTransformation));
+        
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(inRenderObject->myTransformation));
+        
+        // Example uniform settings
+        glm::vec3 lightPos = glm::vec3(1.2f, 1.0f, 2.0f);
+        glm::vec3 viewPos = glm::vec3(0.0f, 0.0f, 3.0f);
+        glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
+        glm::vec3 objectColor = glm::vec3(1.0f, 0.5f, 0.31f);
+
+        glUniform3f(glGetUniformLocation(shaderProgram, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
+        glUniform3f(glGetUniformLocation(shaderProgram, "viewPos"), viewPos.x, viewPos.y, viewPos.z);
+        glUniform3f(glGetUniformLocation(shaderProgram, "lightColor"), lightColor.x, lightColor.y, lightColor.z);
+        glUniform3f(glGetUniformLocation(shaderProgram, "objectColor"), objectColor.x, objectColor.y, objectColor.z);
+
+        // Bind the VAO
+        glBindVertexArray(myLocalVaoAndEbos.first);
+
+        // Access the scene from the model
+        const tinygltf::Scene& scene = myLocalModel.scenes[myLocalModel.defaultScene];
+        for (size_t i = 0; i < scene.nodes.size(); ++i) {
+            drawModelNodesByHash(myRenderObjectHash, i, scene);
         }
 
         // Unbind the VAO

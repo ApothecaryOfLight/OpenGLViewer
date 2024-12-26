@@ -47,7 +47,6 @@ int main(int argc, char* argv[]) {
     FilepathManager* myFilepathManager = new FilepathManager();
 
     OpenGLManager myOpenGLManager(myFilepathManager);
-    myOpenGLManager.InitializeOpenGL(); // Initialize GLEW
 
     // Create shapes
     glm::vec3 red(1.0f, 0.0f, 0.0f);
@@ -69,9 +68,6 @@ int main(int argc, char* argv[]) {
         shape->initialize();
     }
 
-
-    ModelManager myModelManager(myFilepathManager);
-
     myOpenGLManager.setupLighting();
 
     InputManager myInputManager(&myOpenGLManager, &shapes);
@@ -89,9 +85,7 @@ int main(int argc, char* argv[]) {
     ImGui_ImplOpenGL3_Init("#version 330 core"); // Replace `#version 330 core` with your GLSL version.
     ////
 
-    size_t hash_key_evergreen_tree = std::hash<std::string>{}("evergreen_tree.gltf");
-    //size_t evergreen_tree_textured = std::hash<std::string>{}("evergreen_tree_textured");
-    //size_t barramundi = std::hash<std::string>{}("barramundi");
+    size_t hash_key_default_scene = std::hash<std::string>{}("Default Scene");
 
     // Main loop
     bool running = true;
@@ -123,9 +117,11 @@ int main(int argc, char* argv[]) {
             shape->render(myOpenGLManager.shaderProgram, myOpenGLManager.view, myOpenGLManager.proj, myOpenGLManager.cameraPos, angle);
         }
 
-        myModelManager.drawModel(myOpenGLManager.shaderProgram, angle*10);
+        myOpenGLManager.doPrototypeDrawCall(angle*10);
+        myOpenGLManager.doDrawScene(hash_key_default_scene);
+        /*myModelManager.drawModel(myOpenGLManager.shaderProgram, angle*10);
         myModelManager.drawModelLoaded(myOpenGLManager.shaderProgram);
-        myModelManager.drawModelFromHash(myOpenGLManager.shaderProgram, hash_key_evergreen_tree);
+        myModelManager.drawModelFromHash(myOpenGLManager.shaderProgram, hash_key_evergreen_tree);*/
         //myModelManager.drawModelFromHash(myOpenGLManager.shaderProgram, evergreen_tree_textured);
         //myModelManager.drawModelFromHash(myOpenGLManager.shaderProgram, barramundi);
 
@@ -138,7 +134,7 @@ int main(int argc, char* argv[]) {
         ImGui::Text("by Abraham Arvedon");
         
         if (ImGui::Button("Load Model")) {
-            myModelManager.loadModelButton();
+            myOpenGLManager.loadModelButton();
         }
 
         ImGui::End();
