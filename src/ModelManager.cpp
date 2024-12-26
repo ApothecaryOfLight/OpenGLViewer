@@ -392,15 +392,7 @@ void ModelManager::drawModelFromRenderObject(GLuint shaderProgram, RenderObject*
         tinygltf::Model& myLocalModel = modelIt->second;
         const auto& myLocalVaoAndEbos = vaoIt->second;
 
-        // Create the transformation matrix
-        glm::mat4 transformation = glm::mat4(1.0f); // Identity matrix
-        transformation = glm::translate(transformation, inRenderObject->myTranslation); // Translation
-        transformation = glm::rotate(transformation, inRenderObject->myRotationIntensity, inRenderObject->myRotation); // Rotation
-        transformation = glm::scale(transformation, inRenderObject->myScale); // Scaling
-
         // Pass the transformation matrix to the shader
-        //glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(inRenderObject->myTransformation));
-        
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(inRenderObject->myTransformation));
         
         // Example uniform settings

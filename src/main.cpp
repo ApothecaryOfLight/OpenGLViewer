@@ -119,11 +119,6 @@ int main(int argc, char* argv[]) {
 
         myOpenGLManager.doPrototypeDrawCall(angle*10);
         myOpenGLManager.doDrawScene(hash_key_default_scene);
-        /*myModelManager.drawModel(myOpenGLManager.shaderProgram, angle*10);
-        myModelManager.drawModelLoaded(myOpenGLManager.shaderProgram);
-        myModelManager.drawModelFromHash(myOpenGLManager.shaderProgram, hash_key_evergreen_tree);*/
-        //myModelManager.drawModelFromHash(myOpenGLManager.shaderProgram, evergreen_tree_textured);
-        //myModelManager.drawModelFromHash(myOpenGLManager.shaderProgram, barramundi);
 
         /////
         ImGui_ImplOpenGL3_NewFrame();
