@@ -230,16 +230,17 @@ void OpenGLManager::doDrawScene(size_t inSceneHashKey) {
         for( auto& myRenderObjectIndex : VectorOfRenderObjects ) {
             RenderObject* myRenderObject = &myScene->myRenderObjects[myRenderObjectIndex];
             //std::cout << "Drawing object with model hash of " << myRenderObject->ModelHashKey << std::endl;
-            myModelManager->drawModelFromRenderObject(myShaderManager->getShader(ShaderHashKey), myRenderObject);
+            myModelManager->myModelDrawer->drawModelFromRenderObject(myShaderManager->getShader(ShaderHashKey), myRenderObject);
         }
     }
+    myModelManager->myModelDrawer->drawAllOGLModels();
 }
 
 void OpenGLManager::doPrototypeDrawCall(float inAngle) {
     size_t hash_key_evergreen_tree = std::hash<std::string>{}("evergreen_tree.gltf");
-    myModelManager->drawModel(myShaderManager->myCurrentShaderProgramID, inAngle*10);
-    myModelManager->drawModelLoaded(myShaderManager->myCurrentShaderProgramID);
-    myModelManager->drawModelFromHash(myShaderManager->myCurrentShaderProgramID, hash_key_evergreen_tree);
+    myModelManager->myModelDrawer->drawModel(myShaderManager->myCurrentShaderProgramID, inAngle*10);
+    myModelManager->myModelDrawer->drawModelLoaded(myShaderManager->myCurrentShaderProgramID);
+    myModelManager->myModelDrawer->drawModelFromHash(myShaderManager->myCurrentShaderProgramID, hash_key_evergreen_tree);
 }
 
 void OpenGLManager::loadModelButton() {

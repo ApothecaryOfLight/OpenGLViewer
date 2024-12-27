@@ -17,41 +17,37 @@
 #include "SceneLoader.hpp"
 #include "ConfigManager.hpp"
 
+#include "ModelType.hpp"
+#include "ModelLoader.hpp"
+#include "ModelDraw.hpp"
+
+/*
+RenderObjects have a size_t ModelHashKey that will point here
+That will be a key to get the 'Model', a data structure that will contain Mesh nodes.
+Each mesh node will have a vao, vbo, and any relevant material (and possibly texture? uv mapping?) data.
+*/
+
 class ModelManager {
 public:
 	ModelManager(ConfigManager* inConfigManager);
-	void loadAndBindModel(const std::string& filename, tinygltf::Model& model, std::pair<GLuint, std::map<int, GLuint>>* inVaosAndEbos);
-	void doLoadBindHashModel(const std::string& filename);
-	bool loadModel(const std::string& filename, tinygltf::Model& model);
 
-    void drawMesh(const std::map<int, GLuint>& vbos, tinygltf::Model& model, tinygltf::Mesh& mesh);
-	void drawModelNodes(const std::pair<GLuint, std::map<int, GLuint>>& vaoAndEbos, tinygltf::Model& model, tinygltf::Node& node);
-	void drawModelNodesByHash(size_t inHashKey, int inSceneKey, const tinygltf::Scene& inScene);
-	void drawModel(GLuint shaderProgram, float rotation);
-	void drawModel(GLuint shaderProgram, tinygltf::Model inModel, glm::mat4 transform);
-	void drawModelFromHash(GLuint shaderProgram, size_t inHashKey);
-	void drawModelFromRenderObject(GLuint shaderProgram, RenderObject* inRenderObject);
+
 
 	void loadModelButton();
-	void drawModelLoaded(GLuint shaderProgram);
-
-
 	void RenderModelInspectorWindow(tinygltf::Model* ModelData);
 
-    // bind models
-	void bindMesh(std::map<int, GLuint>& vbos, tinygltf::Model& model, tinygltf::Mesh& mesh);
-	void bindModelNodes(std::map<int, GLuint>& vbos, tinygltf::Model& model, tinygltf::Node& node);
-    std::pair<GLuint, std::map<int, GLuint>> bindModel(tinygltf::Model& model);
-
+	std::vector<ModelData> myOGLModels;
 	std::pair<GLuint, std::map<int, GLuint>> vaoAndEbos, vaoAndEbosB, vaoAndEbosLoaded;
-
 	std::unordered_map<size_t,std::pair<GLuint, std::map<int, GLuint>>> myVaosAndEbos;
 	std::unordered_map<size_t,tinygltf::Model> myModels;
+	std::unordered_map<size_t,ModelData> myModelDatas;
 	size_t myHash;
-
 	tinygltf::Model myModel, myModelB, myModelLoaded;
+	
+	ModelDraw* myModelDrawer;
 private:
 	bool isModelLoaded;
 	ConfigManager* myConfigManager;
 	FilepathManager* myFilepathManager;
+	ModelLoader* myModelLoader;
 };
