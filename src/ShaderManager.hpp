@@ -14,11 +14,13 @@
 #include "ConfigManager.hpp"
 #include "FilepathManager.hpp"
 
+
 class ShaderManager {
 public:
 	ShaderManager(ConfigManager* inConfigManager);
 	void loadShaderByFile(std::string inFileLoc);
 	void setShader(size_t inShaderHashKey);
+	GLuint getShader(size_t inShaderHashKey);
 	GLuint compileShader(size_t inShaderHashKeyID);
 	std::vector<std::pair<std::string,size_t>> getShaderList();
 
@@ -28,5 +30,4 @@ private:
 	FilepathManager* myFilepathManager;
 	ConfigManager* myConfigManager;
 	ShaderLoader *myShaderLoader;
-
 };

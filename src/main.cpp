@@ -108,6 +108,7 @@ int main(int argc, char* argv[]) {
         }
         running = myInputManager.processInput();
         myInputManager.highlightIntersectedObject();
+        myInputManager.highlightIntersectedRenderObjectBoundingBox();
 
         angle += 0.01f;
 

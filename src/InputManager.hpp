@@ -8,6 +8,7 @@
 #include <iostream>
 
 #include "OpenGLManager.hpp"
+#include "SceneLoader.hpp"
 
 class InputManager {
 public:
@@ -24,6 +25,8 @@ public:
 
     void highlightIntersectedObject();
     bool intersectRayAABB(const glm::vec3& rayOrigin, const glm::vec3& rayDirection, const glm::vec3& aabbMin, const glm::vec3& aabbMax, float& t);
+    void highlightIntersectedRenderObjectRaytrace(std::vector<RenderObject*>& renderObjects, std::unordered_map<size_t, tinygltf::Model>& modelMap);
+    void highlightIntersectedRenderObjectBoundingBox();
     glm::vec3 generateRay();
     OpenGLManager* myGLManager;
     std::vector<Shape*> *shapes;

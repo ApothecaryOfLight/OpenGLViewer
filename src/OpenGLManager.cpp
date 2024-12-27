@@ -51,7 +51,6 @@ void OpenGLManager::InitializeOpenGL() {
     std::cout << "OpenGL initialized!" << std::endl;
 }
 
-
 void OpenGLManager::setCamera() {
     cameraPos = glm::vec3(0.0f, 1.0f, 5.0f);
     cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
@@ -219,8 +218,20 @@ void OpenGLManager::renderShaderMenu() {
 
 void OpenGLManager::doDrawScene(size_t inSceneHashKey) {
     Scene* myScene = mySceneManager->getScene(inSceneHashKey);
-    for( auto& myRenderObject : myScene->myRenderObjects ) {
+    /*for( auto& myRenderObject : myScene->myRenderObjects ) {
         myModelManager->drawModelFromRenderObject(myShaderManager->myCurrentShaderProgramID, &myRenderObject);
+    }*/
+
+    for( auto& [ShaderHashKey,VectorOfRenderObjects] : myScene->myShaderRenderObjectVectors ) {
+        //std::cout << "Drawing objects with shader " << ShaderHashKey << std::endl;
+        myShaderManager->setShader(ShaderHashKey);
+        setupLighting();
+        UpdateViewAndProjectionMatrices();
+        for( auto& myRenderObjectIndex : VectorOfRenderObjects ) {
+            RenderObject* myRenderObject = &myScene->myRenderObjects[myRenderObjectIndex];
+            //std::cout << "Drawing object with model hash of " << myRenderObject->ModelHashKey << std::endl;
+            myModelManager->drawModelFromRenderObject(myShaderManager->getShader(ShaderHashKey), myRenderObject);
+        }
     }
 }
 
@@ -237,4 +248,68 @@ void OpenGLManager::loadModelButton() {
 
 GLuint OpenGLManager::shaderProgram() {
     return myShaderManager->myCurrentShaderProgramID;
+}
+
+bool intersectRayAABB(const glm::vec3& rayOrigin, const glm::vec3& rayDirection, const glm::vec3& aabbMin, const glm::vec3& aabbMax, float& t) {
+    float t1 = (aabbMin.x - rayOrigin.x) / rayDirection.x;
+    float t2 = (aabbMax.x - rayOrigin.x) / rayDirection.x;
+    float t3 = (aabbMin.y - rayOrigin.y) / rayDirection.y;
+    float t4 = (aabbMax.y - rayOrigin.y) / rayDirection.y;
+    float t5 = (aabbMin.z - rayOrigin.z) / rayDirection.z;
+    float t6 = (aabbMax.z - rayOrigin.z) / rayDirection.z;
+
+    float tmin = std::max({ std::min(t1, t2), std::min(t3, t4), std::min(t5, t6) });
+    float tmax = std::min({ std::max(t1, t2), std::max(t3, t4), std::max(t5, t6) });
+
+    if (tmax < 0 || tmin > tmax) {
+        return false;
+    }
+
+    t = tmin;
+    return true;
+}
+
+void OpenGLManager::highlightIntersectedRenderObjectBoundingBox(glm::vec3 rayOrigin, glm::vec3 rayDirection) {
+    size_t scene_hash_key = std::hash<std::string>{}(std::string("default.scenexml"));
+    Scene* myScene = mySceneManager->getScene(scene_hash_key);
+    float closestT = std::numeric_limits<float>::max();
+    RenderObject* closestRenderObject = nullptr;
+
+    for (RenderObject& renderObject : myScene->myRenderObjects) {
+        renderObject.isHighlighted = false;
+        const tinygltf::Model& model = myModelManager->myModels[renderObject.ModelHashKey];
+
+        // Calculate the AABB of the model (assume it's precomputed or extract vertices to compute it)
+        glm::vec3 aabbMin(FLT_MAX), aabbMax(-FLT_MAX);
+        for (const auto& mesh : model.meshes) {
+            for (const auto& primitive : mesh.primitives) {
+                // Access vertex data
+                const tinygltf::Accessor& accessor = model.accessors[primitive.attributes.find("POSITION")->second];
+                const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
+                const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
+
+                const float* positions = reinterpret_cast<const float*>(&buffer.data[bufferView.byteOffset + accessor.byteOffset]);
+                for (size_t i = 0; i < accessor.count; ++i) {
+                    glm::vec3 vertex(positions[i * 3 + 0], positions[i * 3 + 1], positions[i * 3 + 2]);
+                    aabbMin = glm::min(aabbMin, vertex);
+                    aabbMax = glm::max(aabbMax, vertex);
+                }
+            }
+        }
+
+        // Transform the AABB to world space using the RenderObject's transformation matrix
+        glm::vec3 worldAABBMin = glm::vec3(renderObject.myTransformation * glm::vec4(aabbMin, 1.0f));
+        glm::vec3 worldAABBMax = glm::vec3(renderObject.myTransformation * glm::vec4(aabbMax, 1.0f));
+
+        // Check for intersection with the transformed AABB
+        float t;
+        if (intersectRayAABB(rayOrigin, rayDirection, worldAABBMin, worldAABBMax, t) && t < closestT) {
+            closestT = t;
+            closestRenderObject = &renderObject;
+        }
+    }
+
+    if( closestRenderObject != nullptr ) {
+        closestRenderObject->isHighlighted = true;
+    }
 }

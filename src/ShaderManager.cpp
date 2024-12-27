@@ -11,7 +11,6 @@
 
 #include <string>
 
-
 #include "ShaderLoader.hpp"
 
 #include "ConfigManager.hpp"
@@ -120,11 +119,11 @@ const char* GetGLErrorString(GLenum error) {
 }
 
 void ShaderManager::setShader(size_t inShaderHashKey) {
-    std::cout << "Switching to shader with id " << inShaderHashKey << std::endl;
+    //std::cout << "Switching to shader with id " << inShaderHashKey << std::endl;
     //Get the shader program.
-    std::cout << "Using shader hash key " << inShaderHashKey << std::endl;
+    //std::cout << "Using shader hash key " << inShaderHashKey << std::endl;
     GLuint myShaderProgram = myShaderPrograms[inShaderHashKey];
-    std::cout << "myShaderProgram to set: " << myShaderProgram << std::endl;
+    //std::cout << "myShaderProgram to set: " << myShaderProgram << std::endl;
 
     //Validate the shader to make sure it's valid.
     glValidateProgram(myShaderProgram);
@@ -134,10 +133,10 @@ void ShaderManager::setShader(size_t inShaderHashKey) {
         char infoLog[512];
         glGetProgramInfoLog(myShaderProgram, 512, NULL, infoLog);
         std::cerr << "Error: Program validation failed\n" << infoLog << std::endl;
-    } else {
-        std::cout << "Program validated successfully!" << std::endl;
+    } /*else {
+        //std::cout << "Program validated successfully!" << std::endl;
     }
-    std::cout << "Using new shader program!" << std::endl;
+    std::cout << "Using new shader program!" << std::endl;*/
 
     //Switch to this shader.
     glUseProgram(myShaderProgram);
@@ -146,9 +145,9 @@ void ShaderManager::setShader(size_t inShaderHashKey) {
     GLenum error = glGetError();
     if (error != GL_NO_ERROR) {
         std::cerr << "OpenGL Error: " << GetGLErrorString(error) << std::endl;
-    } else {
+    } /*else {
         std::cout << "No OpenGL errors detected." << std::endl;
-    }
+    }*/
 
     GLint modelLocation = glGetUniformLocation(myShaderProgram, "model");
     if (modelLocation == -1) {
@@ -164,4 +163,8 @@ void ShaderManager::setShader(size_t inShaderHashKey) {
     }
 
     myCurrentShaderProgramID = myShaderPrograms[inShaderHashKey];
+}
+
+GLuint ShaderManager::getShader(size_t inShaderHashKey) {
+    return myShaderPrograms[inShaderHashKey];
 }

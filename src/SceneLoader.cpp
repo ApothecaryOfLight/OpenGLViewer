@@ -9,23 +9,30 @@
 #include <sstream>
 #include <iostream>
 #include <functional> // For std::hash
+#include <unordered_map>
+#include <iomanip>
 
 // Assuming RenderObject and Scene classes are already defined
 RenderObject::RenderObject() : ModelHashKey(0), myTransformation(glm::mat4(1.0f)) {}
 
-RenderObject::RenderObject(glm::vec3 inTranslation, float inRotationIntensity, glm::vec3 inRotation, glm::vec3 inScale, size_t inModelHashKey) 
-    : ModelHashKey(inModelHashKey), myTransformation(glm::mat4(1.0f)) {
+RenderObject::RenderObject(glm::vec3 inTranslation, float inRotationIntensity, glm::vec3 inRotation, glm::vec3 inScale, glm::vec3 inColor, size_t inShaderHashKey, size_t inModelHashKey) 
+    : myTransformation(glm::mat4(1.0f)) {
     myTransformation = glm::translate(glm::mat4(1.0f), inTranslation);
     myTransformation = glm::rotate(myTransformation, glm::radians(inRotationIntensity), inRotation);
     myTransformation = glm::scale(myTransformation, inScale);
+    myColor = inColor;
+    ShaderHashKey = inShaderHashKey;
+    ModelHashKey = inModelHashKey;
+    isHighlighted = false;
 }
 
 Scene::Scene() {
 
 }
 
-void Scene::addRenderObject(glm::vec3 inTranslation, float inRotationIntensity, glm::vec3 inRotation, glm::vec3 inScale, size_t inModelHashKey) {
-    myRenderObjects.emplace_back(inTranslation, inRotationIntensity, inRotation, inScale, inModelHashKey);
+void Scene::addRenderObject(glm::vec3 inTranslation, float inRotationIntensity, glm::vec3 inRotation, glm::vec3 inScale, glm::vec3 inColor, size_t inShaderHashKey, size_t inModelHashKey) {
+    myRenderObjects.emplace_back(inTranslation, inRotationIntensity, inRotation, inScale, inColor, inShaderHashKey, inModelHashKey);
+    myShaderRenderObjectVectors[inShaderHashKey].push_back( myRenderObjects.size()-1 );
 }
 
 // SceneLoader implementation
@@ -63,6 +70,8 @@ Scene* SceneLoader::doLoadScene(std::string inFileLoc) {
         const char* positionText = renderObjectElement->FirstChildElement("position")->GetText();
         const char* rotationText = renderObjectElement->FirstChildElement("rotation")->GetText();
         const char* scaleText = renderObjectElement->FirstChildElement("scale")->GetText();
+        const char* colorText = renderObjectElement->FirstChildElement("color")->GetText();
+        const char* shaderName = renderObjectElement->FirstChildElement("shader")->GetText();
         
         if (!modelName || !positionText || !rotationText || !scaleText) {
             std::cerr << "Incomplete renderObject definition.\n";
@@ -71,6 +80,8 @@ Scene* SceneLoader::doLoadScene(std::string inFileLoc) {
 
         // Hash the model name for ModelHashKey
         size_t modelHashKey = std::hash<std::string>{}(modelName);
+        size_t shaderHashKey = std::hash<std::string>{}(shaderName);
+        std::cout << "Giving render object " << modelName << " hash value of " << modelHashKey << " with shader hash key of " << shaderHashKey << std::endl;
 
         // Parse position
         glm::vec3 position;
@@ -88,8 +99,14 @@ Scene* SceneLoader::doLoadScene(std::string inFileLoc) {
         std::stringstream scaleStream(scaleText);
         scaleStream >> scale.x >> scale.y >> scale.z;
 
+        // Parse color
+        glm::vec3 color;
+        std::stringstream colorStream(colorText);
+        colorStream >> color.x >> color.y >> color.z;
+        std::cout << "Setting color to " << color.x << ", " << color.y << ", " << color.z << std::endl;
+
         // Add RenderObject to the Scene
-        sceneToRet->addRenderObject(position, rotationIntensity, rotationAxis, scale, modelHashKey);
+        sceneToRet->addRenderObject(position, rotationIntensity, rotationAxis, scale, color, shaderHashKey, modelHashKey);
     }
     std::cout << "Loaded scene " << inFileLoc << std::endl;
     return sceneToRet;

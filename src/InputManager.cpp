@@ -9,6 +9,7 @@
 #include "InputManager.hpp"
 
 #include "OpenGLManager.hpp"
+#include "SceneLoader.hpp"
 
 InputManager::InputManager(OpenGLManager* inGLManager, std::vector<Shape*> *inshapes) {
     myGLManager = inGLManager;
@@ -147,4 +148,87 @@ void InputManager::highlightIntersectedObject() {
     if (closestShape) {
         closestShape->isHighlighted = true;
     }
+}
+
+bool rayIntersectsTriangle(const glm::vec3& rayOrigin, const glm::vec3& rayDirection,
+                           const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2, float& t) {
+    const float EPSILON = 1e-8f;
+    glm::vec3 edge1 = v1 - v0;
+    glm::vec3 edge2 = v2 - v0;
+    glm::vec3 h = glm::cross(rayDirection, edge2);
+    float a = glm::dot(edge1, h);
+
+    if (fabs(a) < EPSILON) {
+        return false; // Ray is parallel to the triangle
+    }
+
+    float f = 1.0f / a;
+    glm::vec3 s = rayOrigin - v0;
+    float u = f * glm::dot(s, h);
+    if (u < 0.0f || u > 1.0f) {
+        return false;
+    }
+
+    glm::vec3 q = glm::cross(s, edge1);
+    float v = f * glm::dot(rayDirection, q);
+    if (v < 0.0f || u + v > 1.0f) {
+        return false;
+    }
+
+    t = f * glm::dot(edge2, q);
+    return t > EPSILON; // Only return true if t is positive
+}
+
+
+void InputManager::highlightIntersectedRenderObjectRaytrace(std::vector<RenderObject*>& renderObjects, std::unordered_map<size_t, tinygltf::Model>& modelMap) {
+    glm::vec3 rayOrigin = myGLManager->cameraPos;
+    glm::vec3 rayDirection = generateRay();
+
+    float closestT = std::numeric_limits<float>::max();
+    RenderObject* closestRenderObject = nullptr;
+
+    for (RenderObject* renderObject : renderObjects) {
+        // Retrieve the model associated with this RenderObject
+        auto modelIter = modelMap.find(renderObject->ModelHashKey);
+        if (modelIter == modelMap.end()) {
+            continue; // Skip if the model isn't found
+        }
+
+        const tinygltf::Model& model = modelIter->second;
+
+        // Iterate over the mesh data in the model
+        for (const auto& mesh : model.meshes) {
+            for (const auto& primitive : mesh.primitives) {
+                const tinygltf::Accessor& accessor = model.accessors[primitive.attributes.find("POSITION")->second];
+                const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
+                const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
+
+                const float* positions = reinterpret_cast<const float*>(&buffer.data[bufferView.byteOffset + accessor.byteOffset]);
+
+                // Iterate over triangles in the mesh
+                for (size_t i = 0; i < accessor.count; i += 3) {
+                    glm::vec3 v0 = glm::vec3(renderObject->myTransformation * glm::vec4(positions[i * 3 + 0], positions[i * 3 + 1], positions[i * 3 + 2], 1.0f));
+                    glm::vec3 v1 = glm::vec3(renderObject->myTransformation * glm::vec4(positions[(i + 1) * 3 + 0], positions[(i + 1) * 3 + 1], positions[(i + 1) * 3 + 2], 1.0f));
+                    glm::vec3 v2 = glm::vec3(renderObject->myTransformation * glm::vec4(positions[(i + 2) * 3 + 0], positions[(i + 2) * 3 + 1], positions[(i + 2) * 3 + 2], 1.0f));
+
+                    float t;
+                    if (rayIntersectsTriangle(rayOrigin, rayDirection, v0, v1, v2, t) && t < closestT) {
+                        closestT = t;
+                        closestRenderObject = renderObject;
+                    }
+                }
+            }
+        }
+    }
+
+    // Highlight the closest intersected RenderObject
+    for (RenderObject* renderObject : renderObjects) {
+        renderObject->myColor = (renderObject == closestRenderObject) ? glm::vec3(1.0f, 0.0f, 0.0f) : glm::vec3(1.0f); // Red for highlight, white otherwise
+    }
+}
+
+void InputManager::highlightIntersectedRenderObjectBoundingBox() {
+    glm::vec3 rayOrigin = myGLManager->cameraPos;
+    glm::vec3 rayDirection = generateRay();
+    myGLManager->highlightIntersectedRenderObjectBoundingBox(rayOrigin,rayDirection);
 }

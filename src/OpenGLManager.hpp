@@ -45,6 +45,8 @@ public:
     void doPrototypeDrawCall(float inAngle);
     void loadModelButton();
 
+    void highlightIntersectedRenderObjectBoundingBox(glm::vec3 rayOrigin, glm::vec3 rayDirection);
+
     glm::mat4 view, proj;
 
     glm::vec3 cameraPos, cameraFront, cameraUp;

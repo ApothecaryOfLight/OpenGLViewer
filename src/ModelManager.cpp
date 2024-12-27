@@ -40,12 +40,6 @@ ModelManager::ModelManager(ConfigManager* inConfigManager) {
     for( auto& myModelFilepath : myConfigManager->myModels ) {
         doLoadBindHashModel(myModelFilepath);
     }
-
-    /*doLoadBindHashModel("monkey_head.gltf");
-    doLoadBindHashModel("tile.gltf");
-    doLoadBindHashModel("evergreen_tree.gltf");
-    doLoadBindHashModel("evergreen_tree_textured.gltf");
-    doLoadBindHashModel("BarramundiFish.gltf");*/
 }
 
 void ModelManager::loadAndBindModel(const std::string& inFilename, tinygltf::Model& inModel, std::pair<GLuint, std::map<int, GLuint>>* inVaosAndEbos) {
@@ -134,11 +128,14 @@ void ModelManager::drawModelNodesByHash(size_t inHashKey, int inSceneKey, const 
 
     // Draw the mesh associated with the node
     if (node.mesh >= 0) {
+        std::cout << "Drawing mesh with index: " << node.mesh << std::endl;
         drawMesh(myLocalVaoAndEbos.second, myLocalModel, myLocalModel.meshes[node.mesh]);
     }
 
     // Recursively draw child nodes
     for (size_t i = 0; i < node.children.size(); ++i) {
+        int childIndex = node.children[i];
+        std::cout << "Processing child node with index: " << childIndex << std::endl;
         drawModelNodesByHash(inHashKey, node.children[i], inScene);
     }
 }
@@ -269,13 +266,19 @@ void ModelManager::bindMesh(std::map<int, GLuint>& vbos, tinygltf::Model& model,
         }
     }
 }
+
 void ModelManager::bindModelNodes(std::map<int, GLuint>& vbos, tinygltf::Model& model, tinygltf::Node& node) {
+    std::cout << "Processing node with index: " << &node - &model.nodes[0] << std::endl;
+
     if ((node.mesh >= 0) && (node.mesh < static_cast<int>(model.meshes.size()))) {
+        std::cout << "Binding mesh with index: " << node.mesh << std::endl;
         bindMesh(vbos, model, model.meshes[node.mesh]);
     }
 
     for (size_t i = 0; i < node.children.size(); i++) {
+        int childIndex = node.children[i];
         assert((node.children[i] >= 0) && (node.children[i] < static_cast<int>(model.nodes.size())));
+        std::cout << "Processing child node with index: " << childIndex << std::endl;
         bindModelNodes(vbos, model, model.nodes[node.children[i]]);
     }
 }
@@ -287,7 +290,10 @@ std::pair<GLuint, std::map<int, GLuint>> ModelManager::bindModel(tinygltf::Model
     glBindVertexArray(vao);
 
     const tinygltf::Scene& scene = model.scenes[model.defaultScene];
+    std::cout << "Default scene contains " << scene.nodes.size() << " root nodes." << std::endl;
     for (size_t i = 0; i < scene.nodes.size(); ++i) {
+        int nodeIndex = scene.nodes[i];
+        std::cout << "Processing root node with index: " << nodeIndex << std::endl;
         bindModelNodes(vbos, model, model.nodes[scene.nodes[i]]);
     }
 
@@ -367,7 +373,7 @@ void ModelManager::drawModelFromHash(GLuint shaderProgram, size_t inHash) {
         glm::vec3 lightPos = glm::vec3(1.2f, 1.0f, 2.0f);
         glm::vec3 viewPos = glm::vec3(0.0f, 0.0f, 3.0f);
         glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
-        glm::vec3 objectColor = glm::vec3(1.0f, 0.5f, 0.31f);
+        glm::vec3 objectColor = glm::vec3(0.0f, 5.0f, 5.0f);
 
         glUniform3f(glGetUniformLocation(shaderProgram, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
         glUniform3f(glGetUniformLocation(shaderProgram, "viewPos"), viewPos.x, viewPos.y, viewPos.z);
@@ -402,30 +408,57 @@ void ModelManager::drawModelFromRenderObject(GLuint shaderProgram, RenderObject*
         // Pass the transformation matrix to the shader
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(inRenderObject->myTransformation));
         
-        // Example uniform settings
-        glm::vec3 lightPos = glm::vec3(1.2f, 1.0f, 2.0f);
+        glm::vec3 lightPos = glm::vec3(1.2f, 5.0f, 2.0f);
         glm::vec3 viewPos = glm::vec3(0.0f, 0.0f, 3.0f);
         glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
-        glm::vec3 objectColor = glm::vec3(1.0f, 0.5f, 0.31f);
+        glm::vec3 objectColor = inRenderObject->myColor;
+        if( inRenderObject->isHighlighted ) {
+            objectColor = glm::vec3(0.7f, 0.7f, 0.0f);
+        }
 
         glUniform3f(glGetUniformLocation(shaderProgram, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
         glUniform3f(glGetUniformLocation(shaderProgram, "viewPos"), viewPos.x, viewPos.y, viewPos.z);
         glUniform3f(glGetUniformLocation(shaderProgram, "lightColor"), lightColor.x, lightColor.y, lightColor.z);
         glUniform3f(glGetUniformLocation(shaderProgram, "objectColor"), objectColor.x, objectColor.y, objectColor.z);
 
+
+        glm::vec3 lightAmbient = lightColor * glm::vec3(0.8f);  // Dimmer ambient light
+        glm::vec3 lightDiffuse = lightColor * glm::vec3(0.8f);  // Medium diffuse light
+        glm::vec3 lightSpecular = lightColor * glm::vec3(0.8f); // Bright specular light
+
+        glUniform3f(glGetUniformLocation(shaderProgram, "light.ambient"), lightAmbient.x, lightAmbient.y, lightAmbient.z);
+        glUniform3f(glGetUniformLocation(shaderProgram, "light.diffuse"), lightDiffuse.x, lightDiffuse.y, lightDiffuse.z);
+        glUniform3f(glGetUniformLocation(shaderProgram, "light.specular"), lightSpecular.x, lightSpecular.y, lightSpecular.z);
+
+        glm::vec3 materialAmbient = glm::vec3(1.0f, 1.0f, 1.0f); // Fully lit object
+        glm::vec3 materialDiffuse = glm::vec3(1.0f, 1.0f, 1.0f); // White base color
+        glm::vec3 materialSpecular = glm::vec3(0.5f, 0.5f, 0.5f); // Shiny highlight
+        float materialShininess = 32.0f; // Sharp specular highlights
+
+        glUniform3f(glGetUniformLocation(shaderProgram, "material.ambient"), materialAmbient.x, materialAmbient.y, materialAmbient.z);
+        glUniform3f(glGetUniformLocation(shaderProgram, "material.diffuse"), materialDiffuse.x, materialDiffuse.y, materialDiffuse.z);
+        glUniform3f(glGetUniformLocation(shaderProgram, "material.specular"), materialSpecular.x, materialSpecular.y, materialSpecular.z);
+        glUniform1f(glGetUniformLocation(shaderProgram, "material.shininess"), materialShininess);
+
+
         // Bind the VAO
         glBindVertexArray(myLocalVaoAndEbos.first);
 
         // Access the scene from the model
-        const tinygltf::Scene& scene = myLocalModel.scenes[myLocalModel.defaultScene];
+        /*const tinygltf::Scene& scene = myLocalModel.scenes[myLocalModel.defaultScene];
         for (size_t i = 0; i < scene.nodes.size(); ++i) {
             drawModelNodesByHash(myRenderObjectHash, i, scene);
+        }*/
+        const tinygltf::Scene& scene = myLocalModel.scenes[myLocalModel.defaultScene];
+        for (size_t i = 0; i < scene.nodes.size(); ++i) {
+            int nodeIndex = scene.nodes[i]; // Get the actual node index from the scene
+            drawModelNodesByHash(myRenderObjectHash, nodeIndex, scene);
         }
 
         // Unbind the VAO
         glBindVertexArray(0);
     } else {
-        std::cerr << "Error: Model or VAO/EBO data not found for hash: " << myHash << std::endl;
+        std::cerr << "Error: Model or VAO/EBO data not found for hash: " << myRenderObjectHash << std::endl;
     }
 }
 
