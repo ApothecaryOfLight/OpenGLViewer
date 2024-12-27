@@ -6,6 +6,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 
+#include "ConfigManager.hpp"
 #include "FilepathManager.hpp"
 
 #include "OpenGLManager.hpp"
@@ -45,8 +46,9 @@ int main(int argc, char* argv[]) {
     }
 
     FilepathManager* myFilepathManager = new FilepathManager();
+    ConfigManager* myConfigManager = new ConfigManager(myFilepathManager);
 
-    OpenGLManager myOpenGLManager(myFilepathManager);
+    OpenGLManager myOpenGLManager(myConfigManager);
 
     // Create shapes
     glm::vec3 red(1.0f, 0.0f, 0.0f);
@@ -85,7 +87,7 @@ int main(int argc, char* argv[]) {
     ImGui_ImplOpenGL3_Init("#version 330 core"); // Replace `#version 330 core` with your GLSL version.
     ////
 
-    size_t hash_key_default_scene = std::hash<std::string>{}("Default Scene");
+    size_t hash_key_default_scene = std::hash<std::string>{}("default.scenexml");
 
     // Main loop
     bool running = true;
@@ -114,7 +116,7 @@ int main(int argc, char* argv[]) {
         myOpenGLManager.UpdateViewAndProjectionMatrices();
 
         for (Shape* shape : shapes) {
-            shape->render(myOpenGLManager.shaderProgram, myOpenGLManager.view, myOpenGLManager.proj, myOpenGLManager.cameraPos, angle);
+            shape->render(myOpenGLManager.shaderProgram(), myOpenGLManager.view, myOpenGLManager.proj, myOpenGLManager.cameraPos, angle);
         }
 
         myOpenGLManager.doPrototypeDrawCall(angle*10);
@@ -146,7 +148,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Cleanup
-    glDeleteProgram(myOpenGLManager.shaderProgram);
+    glDeleteProgram(myOpenGLManager.shaderProgram());
     glDeleteBuffers(1, &myOpenGLManager.VBO);
     glDeleteVertexArrays(1, &myOpenGLManager.VAO);
 

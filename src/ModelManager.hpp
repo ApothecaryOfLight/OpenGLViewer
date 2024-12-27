@@ -15,10 +15,11 @@
 
 #include "FilepathManager.hpp"
 #include "SceneLoader.hpp"
+#include "ConfigManager.hpp"
 
 class ModelManager {
 public:
-	ModelManager(FilepathManager* inFilepathManager);
+	ModelManager(ConfigManager* inConfigManager);
 	void loadAndBindModel(const std::string& filename, tinygltf::Model& model, std::pair<GLuint, std::map<int, GLuint>>* inVaosAndEbos);
 	void doLoadBindHashModel(const std::string& filename);
 	bool loadModel(const std::string& filename, tinygltf::Model& model);
@@ -51,5 +52,6 @@ public:
 	tinygltf::Model myModel, myModelB, myModelLoaded;
 private:
 	bool isModelLoaded;
+	ConfigManager* myConfigManager;
 	FilepathManager* myFilepathManager;
 };

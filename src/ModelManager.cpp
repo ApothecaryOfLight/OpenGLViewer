@@ -24,21 +24,28 @@
 #include "imgui/imgui_impl_sdl2.h"
 #include "imgui/imgui_impl_opengl3.h"
 
+#include "ConfigManager.hpp"
+
 // Load the glTF model
-ModelManager::ModelManager(FilepathManager* inFilepathManager) {
+ModelManager::ModelManager(ConfigManager* inConfigManager) {
     isModelLoaded = false;
-    myFilepathManager = inFilepathManager;
+    myConfigManager = inConfigManager;
+    myFilepathManager = myConfigManager->myFilepathManager;
     std::string myModelsFilePath( myFilepathManager->myModelDir );
 
     loadAndBindModel("monkey_head.gltf",myModel, &vaoAndEbos);
     loadAndBindModel("tile.gltf",myModelB, &vaoAndEbosB);
     loadAndBindModel("evergreen_tree.gltf",myModelLoaded,&vaoAndEbosLoaded);
 
-    doLoadBindHashModel("monkey_head.gltf");
+    for( auto& myModelFilepath : myConfigManager->myModels ) {
+        doLoadBindHashModel(myModelFilepath);
+    }
+
+    /*doLoadBindHashModel("monkey_head.gltf");
     doLoadBindHashModel("tile.gltf");
     doLoadBindHashModel("evergreen_tree.gltf");
     doLoadBindHashModel("evergreen_tree_textured.gltf");
-    doLoadBindHashModel("BarramundiFish.gltf");
+    doLoadBindHashModel("BarramundiFish.gltf");*/
 }
 
 void ModelManager::loadAndBindModel(const std::string& inFilename, tinygltf::Model& inModel, std::pair<GLuint, std::map<int, GLuint>>* inVaosAndEbos) {

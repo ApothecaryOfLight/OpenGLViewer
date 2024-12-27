@@ -14,313 +14,32 @@
 
 #include "ShaderLoader.hpp"
 
+#include "ConfigManager.hpp"
+
 #include <iostream>
 
-ShaderManager::ShaderManager(FilepathManager* inFilepathManager) {
+ShaderManager::ShaderManager(ConfigManager* inConfigManager) {
     std::cout << "ShaderManager constructor called!" << std::endl;
+    myConfigManager = inConfigManager;
     myShaderLoader = new ShaderLoader();
-    myFilepathManager = inFilepathManager;
+    myFilepathManager = myConfigManager->myFilepathManager;
 
     std::string myShaderDirectory(myFilepathManager->myShaderDir);
-    loadShaderByFile(myShaderDirectory + "simple_light.shaderxml");
-    loadShaderByFile(myShaderDirectory + "plain_materials.shaderxml");
-    loadShaderByFile(myShaderDirectory + "cel.shaderxml");
+
+    for( auto& ShaderFilePath : myConfigManager->myShaders ) {
+        loadShaderByFile(myShaderDirectory + ShaderFilePath);
+    }
+
+    //Set current shader to the default specified in the config.xml file.
+    myCurrentShaderProgramID = std::hash<std::string>{}(myConfigManager->myDefaultShader);
+    std::cout << "Setting default shader of " << myConfigManager->myDefaultShader << " to " << myCurrentShaderProgramID << std::endl;
+    setShader( 8343586746150268247 ); //Hacky solution until config.xml is being read by tinyXML, see if the error persists then.
 }
 
 void ShaderManager::loadShaderByFile(std::string inFileLoc) {
     std::cout << "Loading shader " << inFileLoc << std::endl;
     size_t myShaderHashKey = myShaderLoader->loadShaderData(inFileLoc);
     myShaderPrograms[myShaderHashKey] = compileShader(myShaderHashKey);
-}
-
-GLuint ShaderManager::loadShader() {
-    // Create and compile the vertex shader
-    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexSource, NULL);
-    glCompileShader(vertexShader);
-
-    // Check for compile errors
-    GLint success;
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        char infoLog[512];
-        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-        std::cout << "Error: Vertex shader compilation failed\n" << infoLog << std::endl;
-    }
-
-    // Create and compile the fragment shader
-    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentSource, NULL);
-    glCompileShader(fragmentShader);
-
-    // Check for compile errors
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        char infoLog[512];
-        glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-        std::cout << "Error: Fragment shader compilation failed\n" << infoLog << std::endl;
-    }
-
-    // Link the vertex and fragment shader into a shader program
-    GLuint shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glBindFragDataLocation(shaderProgram, 0, "outColor");
-    glLinkProgram(shaderProgram);
-
-    // Check for linking errors
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-    if (!success) {
-        char infoLog[512];
-        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-        std::cerr << "Error: Shader program linking failed\n" << infoLog << std::endl;
-    }
-
-    glUseProgram(shaderProgram);
-
-    // Cleanup the shader setup information
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-    return shaderProgram;
-}
-
-GLuint ShaderManager::loadShader(const GLchar* inVertexShaderSource, const GLchar* inFragmentShaderSource) {
-    // Create and compile the vertex shader
-    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &inVertexShaderSource, NULL);
-    glCompileShader(vertexShader);
-
-    // Check for compile errors
-    GLint success;
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        char infoLog[512];
-        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-        std::cout << "Error: Vertex shader compilation failed\n" << infoLog << std::endl;
-    }
-
-    // Create and compile the fragment shader
-    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &inFragmentShaderSource, NULL);
-    glCompileShader(fragmentShader);
-
-    // Check for compile errors
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        char infoLog[512];
-        glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-        std::cout << "Error: Fragment shader compilation failed\n" << infoLog << std::endl;
-    }
-
-    // Link the vertex and fragment shader into a shader program
-    GLuint shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glBindFragDataLocation(shaderProgram, 0, "outColor");
-    glLinkProgram(shaderProgram);
-
-    //  Check for linking errors.
-    GLint linkStatus;
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &linkStatus);
-    if (linkStatus == GL_FALSE) {
-    char infoLog[512];
-    glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-        std::cerr << "Error: Program linking failed\n" << infoLog << std::endl;
-    }
-
-    // Check for linking errors. Again.
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-    if (!success) {
-        char infoLog[512];
-        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-        std::cerr << "Error: Shader program linking failed\n" << infoLog << std::endl;
-    }
-
-    glUseProgram(shaderProgram);
-
-    // Cleanup the shader setup information
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-
-    std::cout << "Returning GLuint for shader as " << shaderProgram << std::endl;
-    return shaderProgram;
-}
-
-void ShaderManager::loadMyShader() {
-    loadShader(
-        R"glsl(
-            #version 150 core
-            in vec3 position;
-            uniform mat4 model;
-            uniform mat4 view;
-            uniform mat4 proj;
-            void main() {
-                gl_Position = proj * view * model * vec4(position, 1.0);
-            }
-        )glsl"
-        ,
-        R"glsl(
-        #version 150 core
-        out vec4 outColor;
-        void main() {
-            outColor = vec4(0.0, 1.0, 0.0, 1.0);
-        }
-    )glsl"
-    );
-}
-
-void ShaderManager::loadShaders() {
-    // Shader sources
-    vertexSource = R"glsl(
-    #version 150 core
-    in vec3 position;
-    uniform mat4 model;
-    uniform mat4 view;
-    uniform mat4 proj;
-    void main() {
-        gl_Position = proj * view * model * vec4(position, 1.0);
-    }
-)glsl";
-
-    fragmentSource = R"glsl(
-    #version 150 core
-    out vec4 outColor;
-    void main() {
-        outColor = vec4(0.0, 1.0, 0.0, 1.0);
-    }
-)glsl";
-}
-
-
-void ShaderManager::loadShadersLight() {
-    // Shader sources
-    vertexSource = R"glsl(
-    #version 150 core
-    in vec3 position;
-    in vec3 normal;
-    out vec3 FragPos;
-    out vec3 Normal;
-    uniform mat4 model;
-    uniform mat4 view;
-    uniform mat4 proj;
-    void main() {
-        FragPos = vec3(model * vec4(position, 1.0));
-        Normal = mat3(transpose(inverse(model))) * normal;  
-        gl_Position = proj * view * model * vec4(position, 1.0);
-    }
-)glsl";
-
-
-    fragmentSource = R"glsl(
-    #version 150 core
-    in vec3 FragPos;
-    in vec3 Normal;
-    out vec4 outColor;
-    struct Light {
-        vec3 position;
-        vec3 ambient;
-        vec3 diffuse;
-        vec3 specular;
-    };
-    struct Material {
-        vec3 ambient;
-        vec3 diffuse;
-        vec3 specular;
-        float shininess;
-    };
-    uniform Light light;
-    uniform Material material;
-    uniform vec3 viewPos;
-    void main() {
-        // Ambient
-        vec3 ambient = light.ambient * material.ambient;
-        
-        // Diffuse
-        vec3 norm = normalize(Normal);
-        vec3 lightDir = normalize(light.position - FragPos);
-        float diff = max(dot(norm, lightDir), 0.0);
-        vec3 diffuse = light.diffuse * (diff * material.diffuse);
-        
-        // Specular
-        vec3 viewDir = normalize(viewPos - FragPos);
-        vec3 reflectDir = reflect(-lightDir, norm);
-        float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
-        vec3 specular = light.specular * (spec * material.specular);
-        
-        vec3 result = ambient + diffuse + specular;
-        outColor = vec4(result, 1.0);
-    }
-)glsl";
-
-}
-
-
-
-void ShaderManager::loadShadersLightCel() {
-    // Shader sources
-    vertexSource = R"glsl(
-#version 330 core
-
-layout(location = 0) in vec3 position;
-layout(location = 1) in vec3 normal;
-
-out vec3 FragPos;
-out vec3 Normal;
-
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
-
-void main() {
-    FragPos = vec3(model * vec4(position, 1.0));
-    Normal = mat3(transpose(inverse(model))) * normal;  
-    gl_Position = projection * view * model * vec4(position, 1.0);
-}
-)glsl";
-
-
-    fragmentSource = R"glsl(
-#version 330 core
-
-in vec3 FragPos;
-in vec3 Normal;
-
-out vec4 FragColor;
-
-uniform vec3 lightPos;
-uniform vec3 viewPos;
-
-uniform vec3 lightColor;
-uniform vec3 objectColor;
-
-void main() {
-    // Ambient
-    vec3 ambient = 0.1 * lightColor;
-    
-    // Diffuse
-    vec3 norm = normalize(Normal);
-    vec3 lightDir = normalize(lightPos - FragPos);
-    float diff = max(dot(norm, lightDir), 0.0);
-    
-    // Cel shading step
-    if (diff > 0.95) diff = 1.0;
-    else if (diff > 0.5) diff = 0.7;
-    else if (diff > 0.25) diff = 0.4;
-    else diff = 0.1;
-
-    vec3 diffuse = diff * lightColor;
-    
-    // Specular
-    vec3 viewDir = normalize(viewPos - FragPos);
-    vec3 reflectDir = reflect(-lightDir, norm);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-    vec3 specular = spec * lightColor;
-    
-    vec3 result = (ambient + diffuse + specular) * objectColor;
-    FragColor = vec4(result, 1.0);
-}
-
-)glsl";
 }
 
 GLuint ShaderManager::compileShader(size_t inShaderHashKeyID) {
@@ -400,7 +119,8 @@ const char* GetGLErrorString(GLenum error) {
     }
 }
 
-GLuint ShaderManager::getShader(size_t inShaderHashKey) {
+void ShaderManager::setShader(size_t inShaderHashKey) {
+    std::cout << "Switching to shader with id " << inShaderHashKey << std::endl;
     //Get the shader program.
     std::cout << "Using shader hash key " << inShaderHashKey << std::endl;
     GLuint myShaderProgram = myShaderPrograms[inShaderHashKey];
@@ -443,5 +163,5 @@ GLuint ShaderManager::getShader(size_t inShaderHashKey) {
         std::cerr << "Uniform 'proj' not found in shader program!" << std::endl;
     }
 
-    return myShaderPrograms[inShaderHashKey];
+    myCurrentShaderProgramID = myShaderPrograms[inShaderHashKey];
 }

@@ -54,7 +54,8 @@ size_t ShaderLoader::loadShaderData(const std::string& filePath) {
         return false;
     }
 
-    size_t shader_hash_key = std::hash<std::string>{}(nameElement->GetText());
+    size_t shader_hash_key = std::hash<std::string>{}(std::string(nameElement->GetText()));
+    std::cout << "Indexing shader with key " << shader_hash_key << " from name of " << nameElement->GetText() << std::endl;
     myShaderSources.emplace(shader_hash_key, ShaderData(nameElement->GetText(), vertexElement->GetText(), fragmentElement->GetText()));
 
     return shader_hash_key;

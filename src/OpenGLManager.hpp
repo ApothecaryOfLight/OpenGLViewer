@@ -14,6 +14,7 @@
 #include "imgui/imgui_impl_sdl2.h"
 #include "imgui/imgui_impl_opengl3.h"
 
+#include "ConfigManager.hpp"
 #include "FilepathManager.hpp"
 
 #include "SceneManager.hpp"
@@ -22,9 +23,10 @@
 
 class OpenGLManager {
 public:
-    OpenGLManager(FilepathManager* inFilepathManager);
+    OpenGLManager(ConfigManager* inConfigManager);
     GLuint myShaderProgram, myShaderB;
-    GLuint VBO, VAO, shaderProgram;
+    GLuint VBO, VAO;
+    //GLuint shaderProgram;
     GLuint cubeVAO, cubeVBO;
 
     void InitializeOpenGL();
@@ -53,7 +55,10 @@ public:
     float sensitivity; // Mouse sensitivity
 
     bool isCelShading;
+
+    GLuint shaderProgram();
 private:
+    ConfigManager* myConfigManager;
     ShapesManager* myShapesManager;
     ShaderManager* myShaderManager;
     SceneManager* mySceneManager;

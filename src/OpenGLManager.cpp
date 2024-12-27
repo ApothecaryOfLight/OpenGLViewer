@@ -19,12 +19,11 @@
 #include "SceneManager.hpp"
 #include "SceneLoader.hpp"
 
-OpenGLManager::OpenGLManager(FilepathManager* inFilepathManager) {
+OpenGLManager::OpenGLManager(ConfigManager* inConfigManager) {
     selectedShaderIndex = 0;
-    myFilepathManager = inFilepathManager;
+    myConfigManager = inConfigManager;
+    myFilepathManager = myConfigManager->myFilepathManager;
     InitializeOpenGL();
-    myModelManager = new ModelManager(inFilepathManager);
-    mySceneManager = new SceneManager(inFilepathManager);
 }
 
 void OpenGLManager::InitializeOpenGL() {
@@ -35,13 +34,15 @@ void OpenGLManager::InitializeOpenGL() {
         exit(EXIT_FAILURE);
     }
 
+    mySceneManager = new SceneManager(myConfigManager);
+    myShaderManager = new ShaderManager(myConfigManager);
     myShapesManager = new ShapesManager;
-    myShaderManager = new ShaderManager(myFilepathManager);
+    myModelManager = new ModelManager(myConfigManager);
 
     isCelShading = false;
-    myShaderManager->loadShadersLight();
+    //myShaderManager->loadShadersLight();
     //myShaderManager->loadShadersOutline();
-    shaderProgram = myShaderManager->loadShader();
+    //shaderProgram = myShaderManager->loadShader();
 
     // Enable depth testing
     glEnable(GL_DEPTH_TEST);
@@ -78,10 +79,10 @@ void OpenGLManager::setupLighting() {
     glm::vec3 lightDiffuse(0.5f, 0.5f, 0.5f);
     glm::vec3 lightSpecular(1.0f, 1.0f, 1.0f);
 
-    GLint lightPosLoc = glGetUniformLocation(shaderProgram, "light.position");
-    GLint lightAmbientLoc = glGetUniformLocation(shaderProgram, "light.ambient");
-    GLint lightDiffuseLoc = glGetUniformLocation(shaderProgram, "light.diffuse");
-    GLint lightSpecularLoc = glGetUniformLocation(shaderProgram, "light.specular");
+    GLint lightPosLoc = glGetUniformLocation(myShaderManager->myCurrentShaderProgramID, "light.position");
+    GLint lightAmbientLoc = glGetUniformLocation(myShaderManager->myCurrentShaderProgramID, "light.ambient");
+    GLint lightDiffuseLoc = glGetUniformLocation(myShaderManager->myCurrentShaderProgramID, "light.diffuse");
+    GLint lightSpecularLoc = glGetUniformLocation(myShaderManager->myCurrentShaderProgramID, "light.specular");
 
     glUniform3fv(lightPosLoc, 1, glm::value_ptr(lightPos));
     glUniform3fv(lightAmbientLoc, 1, glm::value_ptr(lightAmbient));
@@ -94,10 +95,10 @@ void OpenGLManager::setupLighting() {
     glm::vec3 materialSpecular(0.0f, 1.0f, 0.0f);
     float materialShininess = 64.0f;
 
-    GLint materialAmbientLoc = glGetUniformLocation(shaderProgram, "material.ambient");
-    GLint materialDiffuseLoc = glGetUniformLocation(shaderProgram, "material.diffuse");
-    GLint materialSpecularLoc = glGetUniformLocation(shaderProgram, "material.specular");
-    GLint materialShininessLoc = glGetUniformLocation(shaderProgram, "material.shininess");
+    GLint materialAmbientLoc = glGetUniformLocation(myShaderManager->myCurrentShaderProgramID, "material.ambient");
+    GLint materialDiffuseLoc = glGetUniformLocation(myShaderManager->myCurrentShaderProgramID, "material.diffuse");
+    GLint materialSpecularLoc = glGetUniformLocation(myShaderManager->myCurrentShaderProgramID, "material.specular");
+    GLint materialShininessLoc = glGetUniformLocation(myShaderManager->myCurrentShaderProgramID, "material.shininess");
 
     glUniform3fv(materialAmbientLoc, 1, glm::value_ptr(materialAmbient));
     glUniform3fv(materialDiffuseLoc, 1, glm::value_ptr(materialDiffuse));
@@ -120,13 +121,13 @@ void OpenGLManager::UpdateViewAndProjectionMatrices() {
     glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
     glm::mat4 proj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f); //last param is clipping plane distance
 
-    GLint viewLoc = glGetUniformLocation(shaderProgram, "view");
-    GLint projLoc = glGetUniformLocation(shaderProgram, "proj");
+    GLint viewLoc = glGetUniformLocation(myShaderManager->myCurrentShaderProgramID, "view");
+    GLint projLoc = glGetUniformLocation(myShaderManager->myCurrentShaderProgramID, "proj");
 
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(proj));
 
-    GLint viewPosLoc = glGetUniformLocation(shaderProgram, "viewPos");
+    GLint viewPosLoc = glGetUniformLocation(myShaderManager->myCurrentShaderProgramID, "viewPos");
     glUniform3fv(viewPosLoc, 1, glm::value_ptr(cameraPos));
 
     // Update view and projection matrices
@@ -140,13 +141,13 @@ void OpenGLManager::UpdateViewAndProjectionMatrices() {
         glm::vec3 viewPos(0.0f, 0.0f, 3.0f);
         glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
         glm::vec3 objectColor(1.0f, 0.5f, 0.31f);
-        glUniform3fv(glGetUniformLocation(shaderProgram, "lightPos"), 1, glm::value_ptr(lightPos));
-        glUniform3fv(glGetUniformLocation(shaderProgram, "viewPos"), 1, glm::value_ptr(viewPos));
-        glUniform3fv(glGetUniformLocation(shaderProgram, "lightColor"), 1, glm::value_ptr(lightColor));
-        glUniform3fv(glGetUniformLocation(shaderProgram, "objectColor"), 1, glm::value_ptr(objectColor));
+        glUniform3fv(glGetUniformLocation(myShaderManager->myCurrentShaderProgramID, "lightPos"), 1, glm::value_ptr(lightPos));
+        glUniform3fv(glGetUniformLocation(myShaderManager->myCurrentShaderProgramID, "viewPos"), 1, glm::value_ptr(viewPos));
+        glUniform3fv(glGetUniformLocation(myShaderManager->myCurrentShaderProgramID, "lightColor"), 1, glm::value_ptr(lightColor));
+        glUniform3fv(glGetUniformLocation(myShaderManager->myCurrentShaderProgramID, "objectColor"), 1, glm::value_ptr(objectColor));
         // Update view and projection matrices
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(view));
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(proj));
+        glUniformMatrix4fv(glGetUniformLocation(myShaderManager->myCurrentShaderProgramID, "view"), 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(glGetUniformLocation(myShaderManager->myCurrentShaderProgramID, "projection"), 1, GL_FALSE, glm::value_ptr(proj));
         //END CELL SHADING BLOCK
     }
 
@@ -166,9 +167,9 @@ void OpenGLManager::RenderB(float angle) {
     glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -2.0f));
     glm::mat4 proj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 10.0f);
 
-    GLint modelLoc = glGetUniformLocation(shaderProgram, "model");
-    GLint viewLoc = glGetUniformLocation(shaderProgram, "view");
-    GLint projLoc = glGetUniformLocation(shaderProgram, "proj");
+    GLint modelLoc = glGetUniformLocation(myShaderManager->myCurrentShaderProgramID, "model");
+    GLint viewLoc = glGetUniformLocation(myShaderManager->myCurrentShaderProgramID, "view");
+    GLint projLoc = glGetUniformLocation(myShaderManager->myCurrentShaderProgramID, "proj");
 
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
@@ -207,7 +208,7 @@ void OpenGLManager::renderShaderMenu() {
 
     // Render the Apply button
     if (ImGui::Button("Apply")) {
-        shaderProgram = myShaderManager->getShader(myShaderList[selectedShaderIndex].second);
+        myShaderManager->setShader(myShaderList[selectedShaderIndex].second);
         setupLighting();
         UpdateViewAndProjectionMatrices();
     }
@@ -219,17 +220,21 @@ void OpenGLManager::renderShaderMenu() {
 void OpenGLManager::doDrawScene(size_t inSceneHashKey) {
     Scene* myScene = mySceneManager->getScene(inSceneHashKey);
     for( auto& myRenderObject : myScene->myRenderObjects ) {
-        myModelManager->drawModelFromRenderObject(shaderProgram, &myRenderObject);
+        myModelManager->drawModelFromRenderObject(myShaderManager->myCurrentShaderProgramID, &myRenderObject);
     }
 }
 
 void OpenGLManager::doPrototypeDrawCall(float inAngle) {
     size_t hash_key_evergreen_tree = std::hash<std::string>{}("evergreen_tree.gltf");
-    myModelManager->drawModel(shaderProgram, inAngle*10);
-    myModelManager->drawModelLoaded(shaderProgram);
-    myModelManager->drawModelFromHash(shaderProgram, hash_key_evergreen_tree);
+    myModelManager->drawModel(myShaderManager->myCurrentShaderProgramID, inAngle*10);
+    myModelManager->drawModelLoaded(myShaderManager->myCurrentShaderProgramID);
+    myModelManager->drawModelFromHash(myShaderManager->myCurrentShaderProgramID, hash_key_evergreen_tree);
 }
 
 void OpenGLManager::loadModelButton() {
     myModelManager->loadModelButton();
+}
+
+GLuint OpenGLManager::shaderProgram() {
+    return myShaderManager->myCurrentShaderProgramID;
 }

@@ -11,30 +11,22 @@
 
 #include "ShaderLoader.hpp"
 
+#include "ConfigManager.hpp"
 #include "FilepathManager.hpp"
 
 class ShaderManager {
 public:
-	ShaderManager(FilepathManager* inFilepathManager);
-	GLuint loadShader();
-	GLuint loadShader(const GLchar* inVertexShaderSource, const GLchar* inFragmentShaderSource);
-	void loadShaders();
-	void loadShadersLight();
-	void loadShadersLightCel();
+	ShaderManager(ConfigManager* inConfigManager);
 	void loadShaderByFile(std::string inFileLoc);
-	GLuint getShader(size_t inShaderHashKey);
-
+	void setShader(size_t inShaderHashKey);
 	GLuint compileShader(size_t inShaderHashKeyID);
-
-	void loadMyShader();
-	// Shader sources
-	const GLchar* vertexSource;
-	const GLchar* fragmentSource;
-
-	ShaderLoader *myShaderLoader;
-
 	std::vector<std::pair<std::string,size_t>> getShaderList();
+
+	GLuint myCurrentShaderProgramID;
 private:
 	std::unordered_map<size_t,GLuint> myShaderPrograms;
 	FilepathManager* myFilepathManager;
+	ConfigManager* myConfigManager;
+	ShaderLoader *myShaderLoader;
+
 };
