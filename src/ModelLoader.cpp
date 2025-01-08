@@ -86,30 +86,3 @@ bool ModelLoader::loadModel(const std::string& filename, tinygltf::Model& model)
     }
     return ret;
 }
-
-void ModelLoader::loadOGLModel(const std::string& path, std::vector<ModelData>& myOGLModels) {
-    std::cout << std::endl << std::endl << "=============================" << std::endl << "Loading model: " << path << std::endl;
-    tinygltf::Model model;
-    tinygltf::TinyGLTF loader;
-    std::string err, warn;
-
-    if (!loader.LoadASCIIFromFile(&model, &err, &warn, path)) {
-        std::cerr << "Failed to load GLTF model: " << err << std::endl;
-        return;
-    }
-
-    ModelData modelData;
-    modelData.gltfModel = model;
-
-    // Bind nodes and meshes
-    const tinygltf::Scene& scene = model.scenes[model.defaultScene];
-    for (size_t i = 0; i < scene.nodes.size(); ++i) {
-        int nodeIndex = scene.nodes[i];
-        myModelBind->bindOGLModelNodes(modelData.nodeMeshMap, model, model.nodes[nodeIndex]);
-    }
-
-    // Store the model data
-    myOGLModels.push_back(std::move(modelData));
-    std::cout << "Total models: " << myOGLModels.size() << std::endl;
-     std::cout << "Loadded model: " << path << std::endl << "=============================" << std::endl;
-}

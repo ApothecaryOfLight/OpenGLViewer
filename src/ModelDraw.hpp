@@ -37,9 +37,6 @@ public:
 	void drawModel(GLuint shaderProgram, tinygltf::Model inModel, glm::mat4 transform);
 	void drawModelFromHash(GLuint shaderProgram, size_t inHashKey);
 	void drawModelFromRenderObject(GLuint shaderProgram, RenderObject* inRenderObject);
-	void drawOGLModel(int modelIndex);
-	void drawAllOGLModels();
-	void drawOGLNode(int nodeIndex, ModelData& inModelData);
 	void drawModelLoaded(GLuint shaderProgram);
 
     void logError(const std::string& error);

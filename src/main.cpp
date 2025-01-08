@@ -87,7 +87,7 @@ int main(int argc, char* argv[]) {
     ImGui_ImplOpenGL3_Init("#version 330 core"); // Replace `#version 330 core` with your GLSL version.
     ////
 
-    size_t hash_key_default_scene = std::hash<std::string>{}("testing.scenexml");
+    size_t hash_key_default_scene = std::hash<std::string>{}("default.scenexml");
 
     // Main loop
     bool running = true;

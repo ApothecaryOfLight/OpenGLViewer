@@ -58,13 +58,13 @@ void ModelDraw::drawMesh(const std::map<int, GLuint>& vbos, tinygltf::Model& mod
         tinygltf::Accessor indexAccessor = model.accessors[primitive.indices];
  
         // Log general primitive information
-        std::ostringstream oss;
+        /*std::ostringstream oss;
         oss << "  Primitive " << i << ":\n"
             << "    Mode: " << primitive.mode << "\n"
             << "    Index Count: " << indexAccessor.count << "\n"
             << "    Index Component Type: " << indexAccessor.componentType << "\n"
             << "    BufferView Index: " << indexAccessor.bufferView << "\n"
-            << "    Byte Offset: " << indexAccessor.byteOffset;
+            << "    Byte Offset: " << indexAccessor.byteOffset;*/
 
 
 
@@ -80,17 +80,17 @@ void ModelDraw::drawMesh(const std::map<int, GLuint>& vbos, tinygltf::Model& mod
             &boundBuffer
         );
         //std::cout << "Bound Index Buffer: " << boundBuffer << std::endl;
-        oss << "\nBound Index Buffer: " << boundBuffer << "\n";
+        //oss << "\nBound Index Buffer: " << boundBuffer << "\n";
 
         glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &boundVAO);
         glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &boundBuffer);
-        oss << "Bound VAO: " << boundVAO << ", Bound Index Buffer: " << boundBuffer << "\n";
+        //oss << "Bound VAO: " << boundVAO << ", Bound Index Buffer: " << boundBuffer << "\n";
 
 
-        std::string output = oss.str();
-        logError(output);
+        /*std::string output = oss.str();
+        logError(output);*/
 
-        const void *offset = reinterpret_cast<const void *>(indexAccessor.byteOffset);
+        //const void *offset = reinterpret_cast<const void *>(indexAccessor.byteOffset);
         //std::cout << "Better byte offset I hope? : " << offset << std::endl;
 
         glDrawElements(
@@ -164,46 +164,6 @@ void ModelDraw::drawModel(GLuint shaderProgram, float rotation) {
     glBindVertexArray(0);
 }
 
-
-
-void ModelDraw::drawAllOGLModels() {
-    std::cout << "Drawing all OGL Models..." << std::endl;
-    std::cout << "Model Datas size: " << myOGLModels.size() << std::endl;
-    for (size_t i = 0; i < myOGLModels.size(); ++i) {
-        drawOGLModel(i);
-    }
-}
-
-void ModelDraw::drawOGLModel(int modelIndex) {
-    std::cout << "Drawing model " << modelIndex << std::endl;
-    if (modelIndex < 0 || modelIndex >= static_cast<int>(myOGLModels.size())) {
-        std::cerr << "Invalid model index: " << modelIndex << std::endl;
-        return;
-    }
-
-    const ModelData& modelData = myOGLModels[modelIndex];
-    std::cout << "Default scene id: " << modelData.gltfModel.defaultScene << std::endl;
-    const tinygltf::Scene& scene = modelData.gltfModel.scenes[modelData.gltfModel.defaultScene];
-
-    for (size_t i = 0; i < scene.nodes.size(); ++i) {
-        int nodeIndex = scene.nodes[i];
-        drawOGLNode(nodeIndex, myOGLModels[modelIndex]);
-    }
-}
-
-void ModelDraw::drawOGLNode(int nodeIndex, ModelData& inModelData) {
-    const std::map<int, NodeMeshData>& nodeMeshMap = inModelData.nodeMeshMap;
-    auto it = nodeMeshMap.find(nodeIndex);
-    if (it != nodeMeshMap.end()) {
-        const NodeMeshData& nodeMeshData = it->second;
-
-        glBindVertexArray(nodeMeshData.vao);
-        // Assuming drawMesh is a function that knows how to draw the mesh
-        drawMesh(nodeMeshData.vbos, inModelData.gltfModel, inModelData.gltfModel.meshes[nodeIndex]);
-        glBindVertexArray(0);
-    }
-}
-
 void ModelDraw::drawModelLoaded(GLuint shaderProgram) {
     if (!isModelLoaded) {
         return;
@@ -241,7 +201,7 @@ void ModelDraw::drawModelFromHash(GLuint shaderProgram, size_t inHash) {
         tinygltf::Model& myLocalModel = modelIt->second;
         const auto& myLocalVaoAndEbos = vaoIt->second;
         const auto& myVaos = myLocalVaoAndEbos.first;
-        const auto& myVbos = myLocalVaoAndEbos.second;
+        //const auto& myVbos = myLocalVaoAndEbos.second;
 
         // Create the transformation matrix
         glm::mat4 transformation = glm::mat4(1.0f); // Identity matrix
@@ -284,19 +244,23 @@ void ModelDraw::drawModelFromHash(GLuint shaderProgram, size_t inHash) {
 }
 
 void ModelDraw::drawModelFromRenderObject(GLuint shaderProgram, RenderObject* inRenderObject) {
-    // Check if the model and VAO/EBO data exist in the maps
+    // Get the hash key of the model.
     size_t myRenderObjectHash = inRenderObject->ModelHashKey;
+
+    // Check if the model and VAO/EBO data exist in the maps
     auto modelIt = myModels.find(myRenderObjectHash);
     auto vaoIt = myVaosAndEbos.find(myRenderObjectHash);
     if (modelIt != myModels.end() && vaoIt != myVaosAndEbos.end()) {
+        // Get a pointer to the model and the VAOs.
         tinygltf::Model& myLocalModel = modelIt->second;
         const auto& myLocalVaoAndEbos = vaoIt->second;
         const auto& myVaos = myLocalVaoAndEbos.first;
-        const auto& myVbos = myLocalVaoAndEbos.second;
+        //const auto& myVbos = myLocalVaoAndEbos.second;
 
         // Pass the transformation matrix to the shader
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(inRenderObject->myTransformation));
         
+        // Calculate the lighting values
         glm::vec3 lightPos = glm::vec3(1.2f, 5.0f, 2.0f);
         glm::vec3 viewPos = glm::vec3(0.0f, 0.0f, 3.0f);
         glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -309,7 +273,6 @@ void ModelDraw::drawModelFromRenderObject(GLuint shaderProgram, RenderObject* in
         glUniform3f(glGetUniformLocation(shaderProgram, "viewPos"), viewPos.x, viewPos.y, viewPos.z);
         glUniform3f(glGetUniformLocation(shaderProgram, "lightColor"), lightColor.x, lightColor.y, lightColor.z);
         glUniform3f(glGetUniformLocation(shaderProgram, "objectColor"), objectColor.x, objectColor.y, objectColor.z);
-
 
         glm::vec3 lightAmbient = lightColor * glm::vec3(0.8f);  // Dimmer ambient light
         glm::vec3 lightDiffuse = lightColor * glm::vec3(0.8f);  // Medium diffuse light
@@ -324,24 +287,26 @@ void ModelDraw::drawModelFromRenderObject(GLuint shaderProgram, RenderObject* in
         glm::vec3 materialSpecular = glm::vec3(0.5f, 0.5f, 0.5f); // Shiny highlight
         float materialShininess = 32.0f; // Sharp specular highlights
 
+        // Pass the lighting values to the shader.
         glUniform3f(glGetUniformLocation(shaderProgram, "material.ambient"), materialAmbient.x, materialAmbient.y, materialAmbient.z);
         glUniform3f(glGetUniformLocation(shaderProgram, "material.diffuse"), materialDiffuse.x, materialDiffuse.y, materialDiffuse.z);
         glUniform3f(glGetUniformLocation(shaderProgram, "material.specular"), materialSpecular.x, materialSpecular.y, materialSpecular.z);
         glUniform1f(glGetUniformLocation(shaderProgram, "material.shininess"), materialShininess);
 
-        // Access the scene from the model
-        /*const tinygltf::Scene& scene = myLocalModel.scenes[myLocalModel.defaultScene];
-        for (size_t i = 0; i < scene.nodes.size(); ++i) {
-            drawModelNodesByHash(myRenderObjectHash, i, scene);
-        }*/
+        // Get a pointer to the scene.
         const tinygltf::Scene& scene = myLocalModel.scenes[myLocalModel.defaultScene];
+
+        // Iterate through the scene, each element within being a node.
         for (size_t i = 0; i < scene.nodes.size(); ++i) {
             // Bind the VAO
             auto myVAO = myVaos.find(i);
             GLuint vao = myVAO->second;
             glBindVertexArray(vao);
 
-            int nodeIndex = scene.nodes[i]; // Get the actual node index from the scene
+            // Get the node index, not the counter i of this foor loop.
+            int nodeIndex = scene.nodes[i];
+
+            // Draw the node
             drawModelNodesByHash(myRenderObjectHash, nodeIndex, scene);
 
             // Unbind the VAO
