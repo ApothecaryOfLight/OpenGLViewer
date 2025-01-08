@@ -217,6 +217,9 @@ void OpenGLManager::renderShaderMenu() {
 }
 
 void OpenGLManager::doDrawScene(size_t inSceneHashKey) {
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+
     Scene* myScene = mySceneManager->getScene(inSceneHashKey);
     /*for( auto& myRenderObject : myScene->myRenderObjects ) {
         myModelManager->drawModelFromRenderObject(myShaderManager->myCurrentShaderProgramID, &myRenderObject);
@@ -233,7 +236,7 @@ void OpenGLManager::doDrawScene(size_t inSceneHashKey) {
             myModelManager->myModelDrawer->drawModelFromRenderObject(myShaderManager->getShader(ShaderHashKey), myRenderObject);
         }
     }
-    myModelManager->myModelDrawer->drawAllOGLModels();
+    //myModelManager->myModelDrawer->drawAllOGLModels();
 }
 
 void OpenGLManager::doPrototypeDrawCall(float inAngle) {

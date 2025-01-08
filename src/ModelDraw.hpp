@@ -16,16 +16,18 @@
 #include "SceneLoader.hpp"
 #include "ModelType.hpp"
 
+
 class ModelDraw {
 public:
     ModelDraw(
-        std::unordered_map<size_t,std::pair<GLuint, std::map<int, GLuint>>>& inVaosAndEbos,
+        std::unordered_map<size_t,std::pair<std::unordered_map<int, GLuint>, std::map<int, GLuint>>>& inVaosAndEbos,
         std::unordered_map<size_t,tinygltf::Model>& inModels,
         std::pair<GLuint, std::map<int, GLuint>>& invaoAndEbos,
         std::pair<GLuint, std::map<int, GLuint>>& invaoAndEbosLoaded,
         tinygltf::Model& inmyModel,
         tinygltf::Model& inmyModelLoaded,
         std::unordered_map<size_t,ModelData>& inmyModelDatas,
+        std::vector<ModelData> inmyOGLModels,
         bool& inisModelLoaded
     );
     void drawMesh(const std::map<int, GLuint>& vbos, tinygltf::Model& model, tinygltf::Mesh& mesh);
@@ -39,11 +41,17 @@ public:
 	void drawAllOGLModels();
 	void drawOGLNode(int nodeIndex, ModelData& inModelData);
 	void drawModelLoaded(GLuint shaderProgram);
+
+    void logError(const std::string& error);
 private:
-    std::unordered_map<size_t,std::pair<GLuint, std::map<int, GLuint>>>& myVaosAndEbos;
+    std::unordered_map<size_t,std::pair<std::unordered_map<int, GLuint>, std::map<int, GLuint>>>& myVaosAndEbos;
+    std::unordered_map<size_t,std::pair<std::unordered_map<int, GLuint>, std::map<int, GLuint>>> myTestingVAOsVBOs;
     std::unordered_map<size_t,tinygltf::Model>& myModels;
     std::pair<GLuint, std::map<int, GLuint>>& vaoAndEbos, &vaoAndEbosLoaded;
     tinygltf::Model& myModel, &myModelLoaded;
     bool &isModelLoaded;
 	std::unordered_map<size_t,ModelData> &myModelDatas;
+    std::vector<ModelData> &myOGLModels;
+
+    std::vector<std::string> myErrors;
 };

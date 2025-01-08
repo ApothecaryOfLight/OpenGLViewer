@@ -31,14 +31,12 @@ class ModelManager {
 public:
 	ModelManager(ConfigManager* inConfigManager);
 
-
-
 	void loadModelButton();
 	void RenderModelInspectorWindow(tinygltf::Model* ModelData);
 
 	std::vector<ModelData> myOGLModels;
 	std::pair<GLuint, std::map<int, GLuint>> vaoAndEbos, vaoAndEbosB, vaoAndEbosLoaded;
-	std::unordered_map<size_t,std::pair<GLuint, std::map<int, GLuint>>> myVaosAndEbos;
+	std::unordered_map<size_t,std::pair<std::unordered_map<int, GLuint>, std::map<int, GLuint>>> myVaosAndEbos;
 	std::unordered_map<size_t,tinygltf::Model> myModels;
 	std::unordered_map<size_t,ModelData> myModelDatas;
 	size_t myHash;

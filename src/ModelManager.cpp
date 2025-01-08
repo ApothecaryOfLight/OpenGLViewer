@@ -47,24 +47,19 @@ ModelManager::ModelManager(ConfigManager* inConfigManager) {
         myModel,
         myModelLoaded,
         myModelDatas,
+        myOGLModels,
         isModelLoaded
     );
 
-    myModelLoader->loadAndBindModel("monkey_head.gltf",myModel, &vaoAndEbos);
-    myModelLoader->loadAndBindModel("tile.gltf",myModelB, &vaoAndEbosB);
-    myModelLoader->loadAndBindModel("evergreen_tree.gltf",myModelLoaded,&vaoAndEbosLoaded);
-    myModelLoader->loadOGLModel("evergreen_tree.gltf", myOGLModels);
+    //myModelLoader->loadAndBindModel("monkey_head.gltf",myModel, &vaoAndEbos);
+    //myModelLoader->loadAndBindModel("tile.gltf",myModelB, &vaoAndEbosB);
+    //myModelLoader->loadAndBindModel("evergreen_tree.gltf",myModelLoaded,&vaoAndEbosLoaded);
+    //myModelLoader->loadOGLModel(myFilepathManager->myModelDir + "evergreen_tree.gltf", myOGLModels);
 
     for( auto& myModelFilepath : myConfigManager->myModels ) {
         myModelLoader->doLoadBindHashModel(myModelFilepath, myModels, myVaosAndEbos);
     }
 }
-
-
-
-
-
-
 
 //Menu stuff
 void ModelManager::loadModelButton() {
@@ -72,9 +67,9 @@ void ModelManager::loadModelButton() {
     if (!myModelLoader->loadModel("../../bin/data/monkey_head.gltf", myModelLoaded)) {
         std::cerr << "Failed to load glTF model" << std::endl;
     }
-    vaoAndEbosLoaded = myModelLoader->myModelBind->bindModel(myModelLoaded);
+    //vaoAndEbosLoaded = myModelLoader->myModelBind->bindModel(myModelLoaded);
 
-    isModelLoaded = true;
+    //isModelLoaded = true;
 }
 
 void ModelManager::RenderModelInspectorWindow(tinygltf::Model* ModelData) {

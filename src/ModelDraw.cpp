@@ -11,6 +11,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 #include <vector>
+#include <sstream>
 
 #include "SceneLoader.hpp"
 #include "ModelType.hpp"
@@ -19,14 +20,15 @@
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
 
 ModelDraw::ModelDraw(
-    std::unordered_map<size_t,std::pair<GLuint, std::map<int, GLuint>>>& inVaosAndEbos,
-    std::unordered_map<size_t,tinygltf::Model>& inModels,
-    std::pair<GLuint, std::map<int, GLuint>>& invaoAndEbos,
-    std::pair<GLuint, std::map<int, GLuint>>& invaoAndEbosLoaded,
-    tinygltf::Model& inmyModel,
-    tinygltf::Model& inmyModelLoaded,
-    std::unordered_map<size_t,ModelData>& inmyModelDatas,
-    bool& inisModelLoaded
+        std::unordered_map<size_t,std::pair<std::unordered_map<int, GLuint>, std::map<int, GLuint>>>& inVaosAndEbos,
+        std::unordered_map<size_t,tinygltf::Model>& inModels,
+        std::pair<GLuint, std::map<int, GLuint>>& invaoAndEbos,
+        std::pair<GLuint, std::map<int, GLuint>>& invaoAndEbosLoaded,
+        tinygltf::Model& inmyModel,
+        tinygltf::Model& inmyModelLoaded,
+        std::unordered_map<size_t,ModelData>& inmyModelDatas,
+        std::vector<ModelData> inmyOGLModels,
+        bool& inisModelLoaded
 ) : myVaosAndEbos(inVaosAndEbos),
       myModels(inModels),
       vaoAndEbos(invaoAndEbos),
@@ -34,18 +36,62 @@ ModelDraw::ModelDraw(
       myModel(inmyModel),
       myModelLoaded(inmyModelLoaded),
       myModelDatas(inmyModelDatas),
+      myOGLModels(inmyOGLModels),
       isModelLoaded(inisModelLoaded)
 {}
 
+
+void ModelDraw::logError(const std::string& error) {
+    // Check if the error is already logged
+    if (std::find(myErrors.begin(), myErrors.end(), error) == myErrors.end()) {
+        // If not, add it to the vector and print it
+        myErrors.push_back(error);
+        std::cout << error << std::endl;
+    }
+}
+
 void ModelDraw::drawMesh(const std::map<int, GLuint>& vbos, tinygltf::Model& model, tinygltf::Mesh& mesh) {
+    //std::cout << "Drawing mesh with name " << mesh.name << " with primitive count of " << mesh.primitives.size() << std::endl;
+
     for (size_t i = 0; i < mesh.primitives.size(); ++i) {
         tinygltf::Primitive primitive = mesh.primitives[i];
         tinygltf::Accessor indexAccessor = model.accessors[primitive.indices];
+ 
+        // Log general primitive information
+        std::ostringstream oss;
+        oss << "  Primitive " << i << ":\n"
+            << "    Mode: " << primitive.mode << "\n"
+            << "    Index Count: " << indexAccessor.count << "\n"
+            << "    Index Component Type: " << indexAccessor.componentType << "\n"
+            << "    BufferView Index: " << indexAccessor.bufferView << "\n"
+            << "    Byte Offset: " << indexAccessor.byteOffset;
+
+
 
         glBindBuffer(
             GL_ELEMENT_ARRAY_BUFFER,
             vbos.at(indexAccessor.bufferView)
         );
+
+
+        GLint boundVAO, boundBuffer;
+        glGetIntegerv(
+            GL_ELEMENT_ARRAY_BUFFER_BINDING,
+            &boundBuffer
+        );
+        //std::cout << "Bound Index Buffer: " << boundBuffer << std::endl;
+        oss << "\nBound Index Buffer: " << boundBuffer << "\n";
+
+        glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &boundVAO);
+        glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &boundBuffer);
+        oss << "Bound VAO: " << boundVAO << ", Bound Index Buffer: " << boundBuffer << "\n";
+
+
+        std::string output = oss.str();
+        logError(output);
+
+        const void *offset = reinterpret_cast<const void *>(indexAccessor.byteOffset);
+        //std::cout << "Better byte offset I hope? : " << offset << std::endl;
 
         glDrawElements(
             primitive.mode,
@@ -53,6 +99,11 @@ void ModelDraw::drawMesh(const std::map<int, GLuint>& vbos, tinygltf::Model& mod
             indexAccessor.componentType,
             BUFFER_OFFSET(indexAccessor.byteOffset)
         );
+    }
+
+    GLenum error = glGetError();
+    if (error != GL_NO_ERROR) {
+        std::cout << "OpenGL error: " << error << std::endl;
     }
 }
 
@@ -71,17 +122,19 @@ void ModelDraw::drawModelNodesByHash(size_t inHashKey, int inSceneKey, const tin
 
     // Get the current node
     const tinygltf::Node& node = myLocalModel.nodes[inScene.nodes[inSceneKey]];
+    //std::cout << "drawing node " << node.name << std::endl;
 
     // Draw the mesh associated with the node
     if (node.mesh >= 0) {
-        std::cout << "Drawing mesh with index: " << node.mesh << std::endl;
+        //std::cout << "Drawing mesh with index: " << node.mesh << std::endl;
         drawMesh(myLocalVaoAndEbos.second, myLocalModel, myLocalModel.meshes[node.mesh]);
     }
 
     // Recursively draw child nodes
     for (size_t i = 0; i < node.children.size(); ++i) {
+        std::cout << "Reinvoking for child node: " << i << std::endl;
         int childIndex = node.children[i];
-        std::cout << "Processing child node with index: " << childIndex << std::endl;
+        std::cout << "Drawing child node with index: " << childIndex << std::endl;
         drawModelNodesByHash(inHashKey, node.children[i], inScene);
     }
 }
@@ -114,23 +167,27 @@ void ModelDraw::drawModel(GLuint shaderProgram, float rotation) {
 
 
 void ModelDraw::drawAllOGLModels() {
-    for (size_t i = 0; i < myModelDatas.size(); ++i) {
+    std::cout << "Drawing all OGL Models..." << std::endl;
+    std::cout << "Model Datas size: " << myOGLModels.size() << std::endl;
+    for (size_t i = 0; i < myOGLModels.size(); ++i) {
         drawOGLModel(i);
     }
 }
 
 void ModelDraw::drawOGLModel(int modelIndex) {
-    if (modelIndex < 0 || modelIndex >= static_cast<int>(myModelDatas.size())) {
+    std::cout << "Drawing model " << modelIndex << std::endl;
+    if (modelIndex < 0 || modelIndex >= static_cast<int>(myOGLModels.size())) {
         std::cerr << "Invalid model index: " << modelIndex << std::endl;
         return;
     }
 
-    const ModelData& modelData = myModelDatas[modelIndex];
+    const ModelData& modelData = myOGLModels[modelIndex];
+    std::cout << "Default scene id: " << modelData.gltfModel.defaultScene << std::endl;
     const tinygltf::Scene& scene = modelData.gltfModel.scenes[modelData.gltfModel.defaultScene];
 
     for (size_t i = 0; i < scene.nodes.size(); ++i) {
         int nodeIndex = scene.nodes[i];
-        drawOGLNode(nodeIndex, myModelDatas[modelIndex]);
+        drawOGLNode(nodeIndex, myOGLModels[modelIndex]);
     }
 }
 
@@ -183,6 +240,8 @@ void ModelDraw::drawModelFromHash(GLuint shaderProgram, size_t inHash) {
     if (modelIt != myModels.end() && vaoIt != myVaosAndEbos.end()) {
         tinygltf::Model& myLocalModel = modelIt->second;
         const auto& myLocalVaoAndEbos = vaoIt->second;
+        const auto& myVaos = myLocalVaoAndEbos.first;
+        const auto& myVbos = myLocalVaoAndEbos.second;
 
         // Create the transformation matrix
         glm::mat4 transformation = glm::mat4(1.0f); // Identity matrix
@@ -204,17 +263,21 @@ void ModelDraw::drawModelFromHash(GLuint shaderProgram, size_t inHash) {
         glUniform3f(glGetUniformLocation(shaderProgram, "lightColor"), lightColor.x, lightColor.y, lightColor.z);
         glUniform3f(glGetUniformLocation(shaderProgram, "objectColor"), objectColor.x, objectColor.y, objectColor.z);
 
-        // Bind the VAO
-        glBindVertexArray(myLocalVaoAndEbos.first);
 
         // Access the scene from the model
         const tinygltf::Scene& scene = myLocalModel.scenes[myLocalModel.defaultScene];
         for (size_t i = 0; i < scene.nodes.size(); ++i) {
+            // Bind the VAO
+            auto myVAO = myVaos.find(i);
+            GLuint vao = myVAO->second;
+            glBindVertexArray(vao);
+            
             drawModelNodesByHash(inHash, i, scene);
+
+            // Unbind the VAO
+            glBindVertexArray(0);
         }
 
-        // Unbind the VAO
-        glBindVertexArray(0);
     } else {
         std::cerr << "Error: Model or VAO/EBO data not found for hash: " << inHash << std::endl;
     }
@@ -228,6 +291,8 @@ void ModelDraw::drawModelFromRenderObject(GLuint shaderProgram, RenderObject* in
     if (modelIt != myModels.end() && vaoIt != myVaosAndEbos.end()) {
         tinygltf::Model& myLocalModel = modelIt->second;
         const auto& myLocalVaoAndEbos = vaoIt->second;
+        const auto& myVaos = myLocalVaoAndEbos.first;
+        const auto& myVbos = myLocalVaoAndEbos.second;
 
         // Pass the transformation matrix to the shader
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(inRenderObject->myTransformation));
@@ -264,10 +329,6 @@ void ModelDraw::drawModelFromRenderObject(GLuint shaderProgram, RenderObject* in
         glUniform3f(glGetUniformLocation(shaderProgram, "material.specular"), materialSpecular.x, materialSpecular.y, materialSpecular.z);
         glUniform1f(glGetUniformLocation(shaderProgram, "material.shininess"), materialShininess);
 
-
-        // Bind the VAO
-        glBindVertexArray(myLocalVaoAndEbos.first);
-
         // Access the scene from the model
         /*const tinygltf::Scene& scene = myLocalModel.scenes[myLocalModel.defaultScene];
         for (size_t i = 0; i < scene.nodes.size(); ++i) {
@@ -275,12 +336,17 @@ void ModelDraw::drawModelFromRenderObject(GLuint shaderProgram, RenderObject* in
         }*/
         const tinygltf::Scene& scene = myLocalModel.scenes[myLocalModel.defaultScene];
         for (size_t i = 0; i < scene.nodes.size(); ++i) {
+            // Bind the VAO
+            auto myVAO = myVaos.find(i);
+            GLuint vao = myVAO->second;
+            glBindVertexArray(vao);
+
             int nodeIndex = scene.nodes[i]; // Get the actual node index from the scene
             drawModelNodesByHash(myRenderObjectHash, nodeIndex, scene);
-        }
 
-        // Unbind the VAO
-        glBindVertexArray(0);
+            // Unbind the VAO
+            glBindVertexArray(0);
+        }
     } else {
         std::cerr << "Error: Model or VAO/EBO data not found for hash: " << myRenderObjectHash << std::endl;
     }

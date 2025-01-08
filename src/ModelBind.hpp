@@ -27,7 +27,12 @@ public:
     // bind models
 	void bindMesh(std::map<int, GLuint>& vbos, tinygltf::Model& model, tinygltf::Mesh& mesh);
 	void bindModelNodes(std::map<int, GLuint>& vbos, tinygltf::Model& model, tinygltf::Node& node);
-    std::pair<GLuint, std::map<int, GLuint>> bindModel(tinygltf::Model& model);
+    //std::pair<GLuint, std::map<int, GLuint>> bindModel(tinygltf::Model& model);
+	std::pair<std::unordered_map<int, GLuint>, std::map<int, GLuint>> bindModel(tinygltf::Model& model);
+
+
+	void bindModelNodes_m(std::vector<std::pair<GLuint, std::map<int, GLuint>>>& vbos, tinygltf::Model& model, tinygltf::Node& node);
+    std::vector<std::pair<GLuint, std::map<int, GLuint>>> bindModel_m(tinygltf::Model& model);
 
 	ModelData bindOGLModel(tinygltf::Model& model);
 	void bindOGLModelNodes(std::map<int, NodeMeshData>& nodeMeshMap, tinygltf::Model& model, tinygltf::Node& node);
